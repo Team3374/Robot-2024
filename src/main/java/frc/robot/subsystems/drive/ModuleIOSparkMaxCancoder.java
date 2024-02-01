@@ -65,25 +65,25 @@ public class ModuleIOSparkMaxCancoder implements ModuleIO {
         driveSparkMax = new CANSparkMax(11, MotorType.kBrushless);
         turnSparkMax = new CANSparkMax(12, MotorType.kBrushless);
         cancoder = new CANcoder(13);
-        absoluteEncoderOffset = new Rotation2d(1.188); // MUST BE CALIBRATED
+        absoluteEncoderOffset = new Rotation2d(1.188 - Math.PI); // MUST BE CALIBRATED
         break;
       case 1:
         driveSparkMax = new CANSparkMax(21, MotorType.kBrushless);
         turnSparkMax = new CANSparkMax(22, MotorType.kBrushless);
         cancoder = new CANcoder(23);
-        absoluteEncoderOffset = new Rotation2d(-2.308); // MUST BE CALIBRATED
+        absoluteEncoderOffset = new Rotation2d(-2.308 + Math.PI); // MUST BE CALIBRATED
         break;
       case 2:
         driveSparkMax = new CANSparkMax(31, MotorType.kBrushless);
         turnSparkMax = new CANSparkMax(32, MotorType.kBrushless);
         cancoder = new CANcoder(33);
-        absoluteEncoderOffset = new Rotation2d(1.311); // MUST BE CALIBRATED
+        absoluteEncoderOffset = new Rotation2d(1.311 - Math.PI); // MUST BE CALIBRATED
         break;
       case 3:
         driveSparkMax = new CANSparkMax(41, MotorType.kBrushless);
         turnSparkMax = new CANSparkMax(42, MotorType.kBrushless);
         cancoder = new CANcoder(43);
-        absoluteEncoderOffset = new Rotation2d(-0.833); // MUST BE CALIBRATED
+        absoluteEncoderOffset = new Rotation2d(-0.833 + Math.PI); // MUST BE CALIBRATED
         break;
       default:
         throw new RuntimeException("Invalid module index");
@@ -95,7 +95,8 @@ public class ModuleIOSparkMaxCancoder implements ModuleIO {
     driveSparkMax.setCANTimeout(250);
     turnSparkMax.setCANTimeout(250);
 
-    cancoder.getConfigurator().apply(new CANcoderConfiguration());
+    CANcoderConfiguration cancoderConfig = new CANcoderConfiguration();
+    cancoder.getConfigurator().apply(cancoderConfig);
     turnAbsolutePosition = cancoder.getAbsolutePosition();
     BaseStatusSignal.setUpdateFrequencyForAll(50.0, turnAbsolutePosition);
 

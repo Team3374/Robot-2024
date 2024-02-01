@@ -20,6 +20,7 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
 import frc.robot.Constants;
+import frc.robot.util.LoggedTunableNumber;
 import org.littletonrobotics.junction.Logger;
 
 public class Module {
@@ -30,13 +31,21 @@ public class Module {
   private final ModuleIOInputsAutoLogged inputs = new ModuleIOInputsAutoLogged();
   private final int index;
 
-  private final SimpleMotorFeedforward driveFeedforward;
-  private final PIDController driveFeedback;
-  private final PIDController turnFeedback;
+  private SimpleMotorFeedforward driveFeedforward;
+  private PIDController driveFeedback;
+  private PIDController turnFeedback;
   private Rotation2d angleSetpoint = null; // Setpoint for closed loop control, null for open loop
   private Double speedSetpoint = null; // Setpoint for closed loop control, null for open loop
   private Rotation2d turnRelativeOffset = null; // Relative + Offset = Absolute
   private SwerveModulePosition[] odometryPositions = new SwerveModulePosition[] {};
+
+  private final LoggedTunableNumber driveKs = new LoggedTunableNumber("Drive/driveKs");
+  private final LoggedTunableNumber driveKv = new LoggedTunableNumber("Drive/driveKv");
+  private final LoggedTunableNumber driveKp = new LoggedTunableNumber("Drive/driveKp");
+  private final LoggedTunableNumber driveKd = new LoggedTunableNumber("Drive/driveKd");
+
+  private final LoggedTunableNumber turnKp = new LoggedTunableNumber("Drive/turnKp");
+  private final LoggedTunableNumber turnKd = new LoggedTunableNumber("Drive/turnKd");
 
   public Module(ModuleIO io, int index) {
     this.io = io;
@@ -47,19 +56,33 @@ public class Module {
     switch (Constants.currentMode) {
       case REAL:
       case REPLAY:
-        driveFeedforward = new SimpleMotorFeedforward(0.1, 0.13);
+        // driveKs.setDefault(0.1);
+        // driveKv.setDefault(0.17);
+        // driveKp.setDefault(0.05);
+        // driveKd.setDefault(0);
+
+        // turnKp.setDefault(4);
+        // turnKd.setDefault(0);
+
+        // driveFeedforward = new SimpleMotorFeedforward(driveKs.get(), driveKv.get());
+        // driveFeedback = new PIDController(driveKp.get(), 0.0, driveKd.get());
+        // turnFeedback = new PIDController(turnKp.get(), 0.0, turnKd.get());
+        driveFeedforward = new SimpleMotorFeedforward(0.1, 0.17);
         driveFeedback = new PIDController(0.05, 0.0, 0.0);
-        turnFeedback = new PIDController(7.0, 0.0, 0.0);
+        turnFeedback = new PIDController(4.0, 0.0, 0.0);
         break;
       case SIM:
-        driveFeedforward = new SimpleMotorFeedforward(0.0, 0.13);
-        driveFeedback = new PIDController(0.1, 0.0, 0.0);
-        turnFeedback = new PIDController(10.0, 0.0, 0.0);
+        // driveFeedforward = new SimpleMotorFeedforward(0.0, 0.13);
+        // driveFeedback = new PIDController(0.1, 0.0, 0.0);
+        // turnFeedback = new PIDController(10.0, 0.0, 0.0);
+        driveFeedforward = new SimpleMotorFeedforward(driveKs.get(), driveKv.get());
+        driveFeedback = new PIDController(driveKp.get(), 0.0, driveKd.get());
+        turnFeedback = new PIDController(turnKp.get(), 0.0, turnKd.get());
         break;
       default:
-        driveFeedforward = new SimpleMotorFeedforward(0.0, 0.0);
-        driveFeedback = new PIDController(0.0, 0.0, 0.0);
-        turnFeedback = new PIDController(0.0, 0.0, 0.0);
+        driveFeedforward = new SimpleMotorFeedforward(driveKs.get(), driveKv.get());
+        driveFeedback = new PIDController(driveKp.get(), 0.0, driveKd.get());
+        turnFeedback = new PIDController(turnKp.get(), 0.0, turnKd.get());
         break;
     }
 
@@ -73,6 +96,21 @@ public class Module {
    */
   public void updateInputs() {
     io.updateInputs(inputs);
+
+    // TODO: REMOVE NEW PID CONTROLLERS
+
+    // if (driveKp.hasChanged()
+    //     || driveKd.hasChanged()
+    //     || driveKs.hasChanged()
+    //     || driveKv.hasChanged()
+    //     || turnKp.hasChanged()
+    //     || turnKd.hasChanged()) {
+    //   driveFeedforward = new SimpleMotorFeedforward(driveKs.get(), driveKv.get());
+    //   driveFeedback = new PIDController(driveKp.get(), 0.0, driveKd.get());
+    //   turnFeedback = new PIDController(turnKp.get(), 0.0, turnKd.get());
+    // }
+
+    // turnFeedback.enableContinuousInput(-Math.PI, Math.PI);
   }
 
   public void periodic() {
