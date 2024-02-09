@@ -30,7 +30,13 @@ import frc.robot.subsystems.drive.GyroIOPigeon2;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOSparkMaxCancoder;
+import frc.robot.subsystems.intake.Intake;
+import frc.robot.subsystems.intake.IntakeIO;
+import frc.robot.subsystems.intake.IntakeIOSim;
+import frc.robot.subsystems.intake.IntakeIOTalonFX;
+
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
+import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -42,12 +48,15 @@ public class RobotContainer {
   // Subsystems
   private final Drive drive;
   //   private final Flywheel flywheel;
+  private final Intake intake;
 
   // Controller
   private final CommandXboxController controller = new CommandXboxController(0);
 
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
+  private final LoggedDashboardNumber intakeSpeedInput = 
+    new LoggedDashboardNumber("Intake Speed", 1000.0);
   //   private final LoggedDashboardNumber flywheelSpeedInput =
   //       new LoggedDashboardNumber("Flywheel Speed", 1500.0);
 
@@ -63,6 +72,7 @@ public class RobotContainer {
                 new ModuleIOSparkMaxCancoder(1),
                 new ModuleIOSparkMaxCancoder(2),
                 new ModuleIOSparkMaxCancoder(3));
+        intake = new Intake(new IntakeIOTalonFX());
         // flywheel = new Flywheel(new FlywheelIOSparkMax());
         // drive = new Drive(
         // new GyroIOPigeon2(true),
@@ -82,6 +92,7 @@ public class RobotContainer {
                 new ModuleIOSim(),
                 new ModuleIOSim(),
                 new ModuleIOSim());
+        intake = new Intake(new IntakeIOSim());       
         // flywheel = new Flywheel(new FlywheelIOSim());
         break;
 
@@ -94,6 +105,7 @@ public class RobotContainer {
                 new ModuleIO() {},
                 new ModuleIO() {},
                 new ModuleIO() {});
+        intake = new Intake(new IntakeIO() {});
         // flywheel = new Flywheel(new FlywheelIO() {});
         break;
     }
@@ -147,21 +159,26 @@ public class RobotContainer {
             () -> -controller.getLeftY(),
             () -> -controller.getLeftX(),
             () -> -controller.getRightX()));
-    controller.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
-    controller
-        .b()
-        .onTrue(
-            Commands.runOnce(
-                    () ->
-                        drive.setPose(
-                            new Pose2d(drive.getPose().getTranslation(), new Rotation2d())),
-                    drive)
-                .ignoringDisable(true));
+    // controller.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
     // controller
-    //     .a()
-    //     .whileTrue(
-    //         Commands.startEnd(
-    //             () -> flywheel.runVelocity(flywheelSpeedInput.get()), flywheel::stop, flywheel));
+    //     .b()
+    //     .onTrue(
+    //         Commands.runOnce(
+    //                 () ->
+    //                     drive.setPose(
+    //                         new Pose2d(drive.getPose().getTranslation(), new Rotation2d())),
+    //                 drive)
+    //             .ignoringDisable(true));
+    controller
+        .a()
+        .whileTrue(
+            Commands.startEnd(
+                () -> intake.runVelocity(intakeSpeedInput.get()), intake::stop, intake));
+      controller
+        .b()
+        .whileTrue(
+            Commands.startEnd(
+                () -> intake.runVelocity(-intakeSpeedInput.get()), intake::stop, intake));
   }
 
   /**

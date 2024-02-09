@@ -108,9 +108,8 @@ public class Module {
     //   driveFeedforward = new SimpleMotorFeedforward(driveKs.get(), driveKv.get());
     //   driveFeedback = new PIDController(driveKp.get(), 0.0, driveKd.get());
     //   turnFeedback = new PIDController(turnKp.get(), 0.0, turnKd.get());
+    //   turnFeedback.enableContinuousInput(-Math.PI, Math.PI);
     // }
-
-    // turnFeedback.enableContinuousInput(-Math.PI, Math.PI);
   }
 
   public void periodic() {
