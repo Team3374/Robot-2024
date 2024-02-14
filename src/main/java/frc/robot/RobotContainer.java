@@ -13,9 +13,8 @@
 
 package frc.robot;
 
+import com.fasterxml.jackson.databind.ser.std.StdKeySerializers.Default;
 import com.pathplanner.lib.auto.AutoBuilder;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -23,6 +22,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
+import frc.robot.commands.IndexerAutomated;
 import frc.robot.commands.TurnForSeconds;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
@@ -30,11 +30,19 @@ import frc.robot.subsystems.drive.GyroIOPigeon2;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOSparkMaxCancoder;
+import frc.robot.subsystems.flywheel.Flywheel;
+import frc.robot.subsystems.flywheel.FlywheelIO;
+import frc.robot.subsystems.flywheel.FlywheelIOSim;
+import frc.robot.subsystems.flywheel.FlywheelIOSparkMax;
+import frc.robot.subsystems.indexer.Indexer;
+import frc.robot.subsystems.indexer.IndexerIO;
+import frc.robot.subsystems.indexer.IndexerIOSim;
+import frc.robot.subsystems.indexer.IndexerIOSparkMax;
+import frc.robot.subsystems.indexer.IndexerIOTalonFX;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.intake.IntakeIO;
 import frc.robot.subsystems.intake.IntakeIOSim;
 import frc.robot.subsystems.intake.IntakeIOTalonFX;
-
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 
@@ -47,18 +55,21 @@ import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 public class RobotContainer {
   // Subsystems
   private final Drive drive;
-  //   private final Flywheel flywheel;
   private final Intake intake;
+  private final Indexer indexer;
+  private final Flywheel flywheel;
 
   // Controller
   private final CommandXboxController controller = new CommandXboxController(0);
 
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
-  private final LoggedDashboardNumber intakeSpeedInput = 
-    new LoggedDashboardNumber("Intake Speed", 1000.0);
-  //   private final LoggedDashboardNumber flywheelSpeedInput =
-  //       new LoggedDashboardNumber("Flywheel Speed", 1500.0);
+  private final LoggedDashboardNumber intakeSpeedInput =
+      new LoggedDashboardNumber("Intake Speed", 3000.0);
+  private final LoggedDashboardNumber indexerSpeedInput =
+      new LoggedDashboardNumber("Indexer Speed", 3000.0);
+  private final LoggedDashboardNumber flywheelSpeedInput =
+      new LoggedDashboardNumber("Flywheel Speed", 3000.0);
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
@@ -73,14 +84,8 @@ public class RobotContainer {
                 new ModuleIOSparkMaxCancoder(2),
                 new ModuleIOSparkMaxCancoder(3));
         intake = new Intake(new IntakeIOTalonFX());
-        // flywheel = new Flywheel(new FlywheelIOSparkMax());
-        // drive = new Drive(
-        // new GyroIOPigeon2(true),
-        // new ModuleIOTalonFX(0),
-        // new ModuleIOTalonFX(1),
-        // new ModuleIOTalonFX(2),
-        // new ModuleIOTalonFX(3));
-        // flywheel = new Flywheel(new FlywheelIOTalonFX());
+        indexer = new Indexer(new IndexerIOSparkMax());
+        flywheel = new Flywheel(new FlywheelIOSparkMax());
         break;
 
       case SIM:
@@ -92,8 +97,9 @@ public class RobotContainer {
                 new ModuleIOSim(),
                 new ModuleIOSim(),
                 new ModuleIOSim());
-        intake = new Intake(new IntakeIOSim());       
-        // flywheel = new Flywheel(new FlywheelIOSim());
+        intake = new Intake(new IntakeIOSim());
+        indexer = new Indexer(new IndexerIOSim());
+        flywheel = new Flywheel(new FlywheelIOSim());
         break;
 
       default:
@@ -106,7 +112,8 @@ public class RobotContainer {
                 new ModuleIO() {},
                 new ModuleIO() {});
         intake = new Intake(new IntakeIO() {});
-        // flywheel = new Flywheel(new FlywheelIO() {});
+        indexer = new Indexer(new IndexerIO() {});
+        flywheel = new Flywheel(new FlywheelIO() {});
         break;
     }
 
@@ -159,6 +166,10 @@ public class RobotContainer {
             () -> -controller.getLeftY(),
             () -> -controller.getLeftX(),
             () -> -controller.getRightX()));
+
+    indexer.setDefaultCommand(new IndexerAutomated(indexer, indexerSpeedInput.get()));
+    flywheel.setDefaultCommand(
+      Commands.run(() -> flywheel.runVelocity(flywheelSpeedInput.get()), flywheel));
     // controller.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
     // controller
     //     .b()
@@ -170,15 +181,20 @@ public class RobotContainer {
     //                 drive)
     //             .ignoringDisable(true));
     controller
-        .a()
+      .a()
         .whileTrue(
-            Commands.startEnd(
-                () -> intake.runVelocity(intakeSpeedInput.get()), intake::stop, intake));
-      controller
-        .b()
+          Commands.startEnd(
+              () -> intake.runVelocity(intakeSpeedInput.get()), intake::stop, intake));
+    controller
+      .b()
         .whileTrue(
-            Commands.startEnd(
-                () -> intake.runVelocity(-intakeSpeedInput.get()), intake::stop, intake));
+          Commands.startEnd(
+              () -> intake.runVelocity(-intakeSpeedInput.get()), intake::stop, intake));
+    controller
+      .x()
+        .whileTrue(
+          Commands.run(
+            () -> indexer.runVelocity(indexerSpeedInput.get()), indexer));
   }
 
   /**
