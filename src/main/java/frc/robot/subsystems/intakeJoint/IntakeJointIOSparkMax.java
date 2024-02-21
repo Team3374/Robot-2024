@@ -11,7 +11,7 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 
-package frc.robot.subsystems.indexer;
+package frc.robot.subsystems.intakeJoint;
 
 import com.revrobotics.CANSparkBase.ControlType;
 import com.revrobotics.CANSparkLowLevel.MotorType;
@@ -25,19 +25,19 @@ import edu.wpi.first.math.util.Units;
  * NOTE: To use the Spark Flex / NEO Vortex, replace all instances of "CANSparkMax" with
  * "CANSparkFlex".
  */
-public class IndexerIOSparkMax implements IndexerIO {
-  private static final double GEAR_RATIO = 5;
+public class IntakeJointIOSparkMax implements IntakeJointIO {
+  private static final double GEAR_RATIO = 1.5;
 
-  private final CANSparkMax leader = new CANSparkMax(51, MotorType.kBrushless);
+  private final CANSparkMax leader = new CANSparkMax(53, MotorType.kBrushless);
   private final RelativeEncoder encoder = leader.getEncoder();
   private final SparkPIDController pid = leader.getPIDController();
 
-  public IndexerIOSparkMax() {
+  public IntakeJointIOSparkMax() {
     leader.restoreFactoryDefaults();
 
     leader.setCANTimeout(250);
 
-    leader.setInverted(true);
+    leader.setInverted(false);
 
     leader.enableVoltageCompensation(12.0);
     leader.setSmartCurrentLimit(30);
@@ -46,7 +46,7 @@ public class IndexerIOSparkMax implements IndexerIO {
   }
 
   @Override
-  public void updateInputs(IndexerIOInputs inputs) {
+  public void updateInputs(IntakeJointIOInputs inputs) {
     inputs.positionRad = Units.rotationsToRadians(encoder.getPosition() / GEAR_RATIO);
     inputs.velocityRadPerSec =
         Units.rotationsPerMinuteToRadiansPerSecond(encoder.getVelocity() / GEAR_RATIO);
@@ -60,13 +60,14 @@ public class IndexerIOSparkMax implements IndexerIO {
   }
 
   @Override
-  public void setVelocity(double velocityRadPerSec, double ffVolts) {
+  public void setPosition(double positionRad, double ffVolts) {
     pid.setReference(
-        Units.radiansPerSecondToRotationsPerMinute(velocityRadPerSec) * GEAR_RATIO,
-        ControlType.kVelocity,
-        0,
-        ffVolts,
-        ArbFFUnits.kVoltage);
+      positionRad,
+      ControlType.kPosition,
+      0,
+      ffVolts,
+      ArbFFUnits.kVoltage
+    );
   }
 
   @Override

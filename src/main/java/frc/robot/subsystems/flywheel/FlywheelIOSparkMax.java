@@ -26,7 +26,7 @@ import edu.wpi.first.math.util.Units;
  * "CANSparkFlex".
  */
 public class FlywheelIOSparkMax implements FlywheelIO {
-  private static final double GEAR_RATIO = 1.5;
+  private static final double GEAR_RATIO = 1;
 
   private final CANSparkMax leader = new CANSparkMax(52, MotorType.kBrushless);
   private final RelativeEncoder encoder = leader.getEncoder();
@@ -37,7 +37,7 @@ public class FlywheelIOSparkMax implements FlywheelIO {
 
     leader.setCANTimeout(250);
 
-    leader.setInverted(false);
+    leader.setInverted(true);
 
     leader.enableVoltageCompensation(12.0);
     leader.setSmartCurrentLimit(30);

@@ -6,7 +6,7 @@
       "name": "Main",
       "request": "launch",
       "mainClass": "frc.robot.Main",
-      "projectName": "2024 Robot Code"
+      "projectName": "Robot-2024"
     },
     {
       "type": "wpilib",

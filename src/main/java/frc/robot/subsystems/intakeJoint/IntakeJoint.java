@@ -11,7 +11,7 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 
-package frc.robot.subsystems.indexer;
+package frc.robot.subsystems.intakeJoint;
 
 import static edu.wpi.first.units.Units.*;
 
@@ -24,14 +24,14 @@ import frc.robot.Constants;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
-public class Indexer extends SubsystemBase {
-  private final IndexerIO io;
-  private final IndexerIOInputsAutoLogged inputs = new IndexerIOInputsAutoLogged();
+public class IntakeJoint extends SubsystemBase {
+  private final IntakeJointIO io;
+  private final IntakeJointIOInputsAutoLogged inputs = new IntakeJointIOInputsAutoLogged();
   private final SimpleMotorFeedforward ffModel;
   private final SysIdRoutine sysId;
 
-  /** Creates a new Indexer. */
-  public Indexer(IndexerIO io) {
+  /** Creates a new Intake Joint. */
+  public IntakeJoint(IntakeJointIO io) {
     this.io = io;
 
     // Switch constants based on mode (the physics simulator is treated as a
@@ -58,14 +58,14 @@ public class Indexer extends SubsystemBase {
                 null,
                 null,
                 null,
-                (state) -> Logger.recordOutput("Indexer/SysIdState", state.toString())),
+                (state) -> Logger.recordOutput("IntakeJoint/SysIdState", state.toString())),
             new SysIdRoutine.Mechanism((voltage) -> runVolts(voltage.in(Volts)), null, this));
   }
 
   @Override
   public void periodic() {
     io.updateInputs(inputs);
-    Logger.processInputs("Indexer", inputs);
+    Logger.processInputs("IntakeJoint", inputs);
   }
 
   /** Run open loop at the specified voltage. */
@@ -73,16 +73,13 @@ public class Indexer extends SubsystemBase {
     io.setVoltage(volts);
   }
 
-  /** Run closed loop at the specified velocity. */
-  public void runVelocity(double velocityRPM) {
+  /** Run closed loop at to the specified position. */
+  public void runPosition(double positionRad, double velocityRPM) {
     var velocityRadPerSec = Units.rotationsPerMinuteToRadiansPerSecond(velocityRPM);
-    io.setVelocity(velocityRadPerSec, ffModel.calculate(velocityRadPerSec));
-
-    // Log Indexer setpoint
-    Logger.recordOutput("Indexer/SetpointRPM", velocityRPM);
+    io.setPosition(positionRad, ffModel.calculate(velocityRadPerSec));
   }
 
-  /** Stops the Indexer. */
+  /** Stops the Intake Joint. */
   public void stop() {
     io.stop();
   }
@@ -101,6 +98,12 @@ public class Indexer extends SubsystemBase {
   @AutoLogOutput
   public double getVelocityRPM() {
     return Units.radiansPerSecondToRotationsPerMinute(inputs.velocityRadPerSec);
+  }
+
+  /** Returns the current position in degrees. */
+  @AutoLogOutput
+  public double getPosition() {
+    return inputs.positionRad;
   }
 
   /** Returns the current velocity in radians per second. */

@@ -17,6 +17,7 @@ import static edu.wpi.first.units.Units.*;
 
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
@@ -29,6 +30,8 @@ public class Intake extends SubsystemBase {
   private final IntakeIOInputsAutoLogged inputs = new IntakeIOInputsAutoLogged();
   private final SimpleMotorFeedforward ffModel;
   private final SysIdRoutine sysId;
+
+  private final DigitalInput beamBrake;
 
   /** Creates a new Intake. */
   public Intake(IntakeIO io) {
@@ -60,6 +63,9 @@ public class Intake extends SubsystemBase {
                 null,
                 (state) -> Logger.recordOutput("Intake/SysIdState", state.toString())),
             new SysIdRoutine.Mechanism((voltage) -> runVolts(voltage.in(Volts)), null, this));
+
+    // initialize beam brake
+    beamBrake = new DigitalInput(0);
   }
 
   @Override
@@ -106,5 +112,10 @@ public class Intake extends SubsystemBase {
   /** Returns the current velocity in radians per second. */
   public double getCharacterizationVelocity() {
     return inputs.velocityRadPerSec;
+  }
+
+  /** Returns the beam brake state */
+  public boolean getBeamBrake() {
+    return beamBrake.get();
   }
 }

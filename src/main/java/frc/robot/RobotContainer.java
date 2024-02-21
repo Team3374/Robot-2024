@@ -13,7 +13,6 @@
 
 package frc.robot;
 
-import com.fasterxml.jackson.databind.ser.std.StdKeySerializers.Default;
 import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
@@ -22,7 +21,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
-import frc.robot.commands.IndexerAutomated;
+import frc.robot.commands.IntakeAutomated;
 import frc.robot.commands.TurnForSeconds;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
@@ -38,11 +37,15 @@ import frc.robot.subsystems.indexer.Indexer;
 import frc.robot.subsystems.indexer.IndexerIO;
 import frc.robot.subsystems.indexer.IndexerIOSim;
 import frc.robot.subsystems.indexer.IndexerIOSparkMax;
-import frc.robot.subsystems.indexer.IndexerIOTalonFX;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.intake.IntakeIO;
 import frc.robot.subsystems.intake.IntakeIOSim;
 import frc.robot.subsystems.intake.IntakeIOTalonFX;
+import frc.robot.subsystems.intakeJoint.IntakeJoint;
+import frc.robot.subsystems.intakeJoint.IntakeJointIO;
+import frc.robot.subsystems.intakeJoint.IntakeJointIOSim;
+import frc.robot.subsystems.intakeJoint.IntakeJointIOSparkMax;
+
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 
@@ -56,6 +59,7 @@ public class RobotContainer {
   // Subsystems
   private final Drive drive;
   private final Intake intake;
+  private final IntakeJoint intakeJoint;
   private final Indexer indexer;
   private final Flywheel flywheel;
 
@@ -66,6 +70,10 @@ public class RobotContainer {
   private final LoggedDashboardChooser<Command> autoChooser;
   private final LoggedDashboardNumber intakeSpeedInput =
       new LoggedDashboardNumber("Intake Speed", 3000.0);
+    private final LoggedDashboardNumber intakeJointSpeedInput =
+      new LoggedDashboardNumber("Intake Joint Speed", 3000.0);
+    private final LoggedDashboardNumber intakeJointPositionInput =
+      new LoggedDashboardNumber("Intake Joint Position", 1);
   private final LoggedDashboardNumber indexerSpeedInput =
       new LoggedDashboardNumber("Indexer Speed", 3000.0);
   private final LoggedDashboardNumber flywheelSpeedInput =
@@ -84,6 +92,7 @@ public class RobotContainer {
                 new ModuleIOSparkMaxCancoder(2),
                 new ModuleIOSparkMaxCancoder(3));
         intake = new Intake(new IntakeIOTalonFX());
+        intakeJoint = new IntakeJoint(new IntakeJointIOSparkMax());
         indexer = new Indexer(new IndexerIOSparkMax());
         flywheel = new Flywheel(new FlywheelIOSparkMax());
         break;
@@ -98,6 +107,7 @@ public class RobotContainer {
                 new ModuleIOSim(),
                 new ModuleIOSim());
         intake = new Intake(new IntakeIOSim());
+        intakeJoint = new IntakeJoint(new IntakeJointIOSim());
         indexer = new Indexer(new IndexerIOSim());
         flywheel = new Flywheel(new FlywheelIOSim());
         break;
@@ -112,6 +122,7 @@ public class RobotContainer {
                 new ModuleIO() {},
                 new ModuleIO() {});
         intake = new Intake(new IntakeIO() {});
+        intakeJoint = new IntakeJoint(new IntakeJointIO() {});
         indexer = new Indexer(new IndexerIO() {});
         flywheel = new Flywheel(new FlywheelIO() {});
         break;
@@ -167,34 +178,50 @@ public class RobotContainer {
             () -> -controller.getLeftX(),
             () -> -controller.getRightX()));
 
-    indexer.setDefaultCommand(new IndexerAutomated(indexer, indexerSpeedInput.get()));
-    flywheel.setDefaultCommand(
-      Commands.run(() -> flywheel.runVelocity(flywheelSpeedInput.get()), flywheel));
-    // controller.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
-    // controller
-    //     .b()
-    //     .onTrue(
-    //         Commands.runOnce(
-    //                 () ->
-    //                     drive.setPose(
-    //                         new Pose2d(drive.getPose().getTranslation(), new Rotation2d())),
-    //                 drive)
-    //             .ignoringDisable(true));
+    intake.setDefaultCommand(new IntakeAutomated(intake, intakeSpeedInput.get()));
+    intakeJoint.setDefaultCommand(
+        Commands.run(() -> intakeJoint.runPosition(0, intakeJointSpeedInput.get()), intakeJoint));
+        
     controller
-      .a()
+        .a()
         .whileTrue(
-          Commands.startEnd(
-              () -> intake.runVelocity(intakeSpeedInput.get()), intake::stop, intake));
+            Commands.startEnd(
+                () -> intake.runVelocity(intakeSpeedInput.get()), intake::stop, intake))
+        .whileTrue(
+            Commands.startEnd(
+                () -> intakeJoint.runPosition(intakeJointPositionInput.get(), intakeJointSpeedInput.get()), 
+                intakeJoint::stop, 
+                intakeJoint));
     controller
-      .b()
+        .b()
         .whileTrue(
-          Commands.startEnd(
-              () -> intake.runVelocity(-intakeSpeedInput.get()), intake::stop, intake));
+            Commands.startEnd(
+                () -> intake.runVelocity(-intakeSpeedInput.get()), intake::stop, intake))
+        .whileTrue(
+            Commands.startEnd(
+                () -> intakeJoint.runPosition(intakeJointPositionInput.get(), intakeJointSpeedInput.get()), 
+                intakeJoint::stop, 
+                intakeJoint));
     controller
-      .x()
+        .x()
         .whileTrue(
-          Commands.run(
-            () -> indexer.runVelocity(indexerSpeedInput.get()), indexer));
+            Commands.startEnd(
+                () -> indexer.runVelocity(indexerSpeedInput.get()), indexer::stop, indexer));
+    controller
+        .y()
+        .whileTrue(
+            Commands.startEnd(
+                () -> indexer.runVelocity(-indexerSpeedInput.get()), indexer::stop, indexer));
+    controller
+        .rightBumper()
+        .whileTrue(
+            Commands.startEnd(
+                () -> flywheel.runVelocity(flywheelSpeedInput.get()), flywheel::stop, flywheel));
+    controller
+        .leftBumper()
+        .whileTrue(
+            Commands.startEnd(
+                () -> flywheel.runVelocity(-flywheelSpeedInput.get()), flywheel::stop, flywheel));
   }
 
   /**
