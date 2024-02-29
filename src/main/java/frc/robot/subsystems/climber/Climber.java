@@ -11,13 +11,12 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 
-package frc.robot.subsystems.intake;
+package frc.robot.subsystems.climber;
 
 import static edu.wpi.first.units.Units.*;
 
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
@@ -25,16 +24,14 @@ import frc.robot.Constants;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
-public class Intake extends SubsystemBase {
-  private final IntakeIO io;
-  private final IntakeIOInputsAutoLogged inputs = new IntakeIOInputsAutoLogged();
+public class Climber extends SubsystemBase {
+  private final ClimberIO io;
+  private final ClimberIOInputsAutoLogged inputs = new ClimberIOInputsAutoLogged();
   private final SimpleMotorFeedforward ffModel;
   private final SysIdRoutine sysId;
 
-  private final DigitalInput beamBrake = new DigitalInput(0);
-
-  /** Creates a new Intake. */
-  public Intake(IntakeIO io) {
+  /** Creates a new Climber. */
+  public Climber(ClimberIO io) {
     this.io = io;
 
     // Switch constants based on mode (the physics simulator is treated as a
@@ -61,14 +58,14 @@ public class Intake extends SubsystemBase {
                 null,
                 null,
                 null,
-                (state) -> Logger.recordOutput("Intake/SysIdState", state.toString())),
+                (state) -> Logger.recordOutput("Climber/SysIdState", state.toString())),
             new SysIdRoutine.Mechanism((voltage) -> runVolts(voltage.in(Volts)), null, this));
   }
 
   @Override
   public void periodic() {
     io.updateInputs(inputs);
-    Logger.processInputs("Intake", inputs);
+    Logger.processInputs("Climber", inputs);
   }
 
   /** Run open loop at the specified voltage. */
@@ -81,11 +78,21 @@ public class Intake extends SubsystemBase {
     var velocityRadPerSec = Units.rotationsPerMinuteToRadiansPerSecond(velocityRPM);
     io.setVelocity(velocityRadPerSec, ffModel.calculate(velocityRadPerSec));
 
-    // Log Intake setpoint
-    Logger.recordOutput("Intake/SetpointRPM", velocityRPM);
+    // Log Climber setpoint
+    Logger.recordOutput("Climber/SetpointRPM", velocityRPM);
   }
 
-  /** Stops the Intake. */
+  /** Run closed loop at to the specified position. */
+  public void runPosition(double positionRad, double velocityRPM) {
+    var velocityRadPerSec = Units.rotationsPerMinuteToRadiansPerSecond(velocityRPM);
+    io.setPosition(positionRad, ffModel.calculate(velocityRadPerSec));
+
+    // Log Climber setpoint
+    Logger.recordOutput("Climber/SetpointRPM", velocityRPM);
+    Logger.recordOutput("Climber/PositionRad", positionRad);
+  }
+
+  /** Stops the Climber. */
   public void stop() {
     io.stop();
   }
@@ -111,8 +118,8 @@ public class Intake extends SubsystemBase {
     return inputs.velocityRadPerSec;
   }
 
-  /** Returns the beam brake state */
-  public boolean getBeamBrake() {
-    return beamBrake.get();
+  // ** Returns the current encoder position in ticks */
+  public double getPosition() {
+    return inputs.positionRad;
   }
 }

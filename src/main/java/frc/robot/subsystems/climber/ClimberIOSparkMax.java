@@ -11,38 +11,42 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 
-package frc.robot.subsystems.intakeJoint;
+package frc.robot.subsystems.climber;
 
+import com.revrobotics.CANSparkBase.ControlType;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
+import com.revrobotics.SparkPIDController;
+import com.revrobotics.SparkPIDController.ArbFFUnits;
 import edu.wpi.first.math.util.Units;
 
 /**
  * NOTE: To use the Spark Flex / NEO Vortex, replace all instances of "CANSparkMax" with
  * "CANSparkFlex".
  */
-public class IntakeJointIOSparkMax implements IntakeJointIO {
-  private static final double GEAR_RATIO = 48;
+public class ClimberIOSparkMax implements ClimberIO {
+  private static final double GEAR_RATIO = 1.5;
 
-  private final CANSparkMax leader = new CANSparkMax(53, MotorType.kBrushless);
+  private final CANSparkMax leader = new CANSparkMax(51, MotorType.kBrushless);
   private final RelativeEncoder encoder = leader.getEncoder();
+  private final SparkPIDController pid = leader.getPIDController();
 
-  public IntakeJointIOSparkMax() {
+  public ClimberIOSparkMax() {
     leader.restoreFactoryDefaults();
 
     leader.setCANTimeout(250);
 
+    leader.setInverted(false);
+
     leader.enableVoltageCompensation(12.0);
     leader.setSmartCurrentLimit(30);
-
-    encoder.setPosition(0);
 
     leader.burnFlash();
   }
 
   @Override
-  public void updateInputs(IntakeJointIOInputs inputs) {
+  public void updateInputs(ClimberIOInputs inputs) {
     inputs.positionRad = Units.rotationsToRadians(encoder.getPosition() / GEAR_RATIO);
     inputs.velocityRadPerSec =
         Units.rotationsPerMinuteToRadiansPerSecond(encoder.getVelocity() / GEAR_RATIO);
@@ -51,22 +55,35 @@ public class IntakeJointIOSparkMax implements IntakeJointIO {
   }
 
   @Override
-  public void setSpeed(double speed) {
-    leader.set(speed);
+  public void setVoltage(double volts) {
+    leader.setVoltage(volts);
   }
 
   @Override
-  public void zeroPosition() {
-    encoder.setPosition(0);
+  public void setVelocity(double velocityRadPerSec, double ffVolts) {
+    pid.setReference(
+        Units.radiansPerSecondToRotationsPerMinute(velocityRadPerSec) * GEAR_RATIO,
+        ControlType.kVelocity,
+        0,
+        ffVolts,
+        ArbFFUnits.kVoltage);
   }
 
   @Override
-  public double getRawPosition() {
-    return encoder.getPosition();
+  public void setPosition(double positionRad, double ffVolts) {
+    pid.setReference(positionRad, ControlType.kPosition, 0, ffVolts, ArbFFUnits.kVoltage);
   }
 
   @Override
   public void stop() {
     leader.stopMotor();
+  }
+
+  @Override
+  public void configurePID(double kP, double kI, double kD) {
+    pid.setP(kP, 0);
+    pid.setI(kI, 0);
+    pid.setD(kD, 0);
+    pid.setFF(0, 0);
   }
 }

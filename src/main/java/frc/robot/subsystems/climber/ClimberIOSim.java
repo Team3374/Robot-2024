@@ -11,14 +11,14 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 
-package frc.robot.subsystems.intakeJoint;
+package frc.robot.subsystems.climber;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 
-public class IntakeJointIOSim implements IntakeJointIO {
+public class ClimberIOSim implements ClimberIO {
   private DCMotorSim sim = new DCMotorSim(DCMotor.getNEO(1), 1.5, 0.004);
   private PIDController pid = new PIDController(0.0, 0.0, 0.0);
 
@@ -27,7 +27,7 @@ public class IntakeJointIOSim implements IntakeJointIO {
   private double appliedVolts = 0.0;
 
   @Override
-  public void updateInputs(IntakeJointIOInputs inputs) {
+  public void updateInputs(ClimberIOInputs inputs) {
     if (closedLoop) {
       appliedVolts =
           MathUtil.clamp(pid.calculate(sim.getAngularVelocityRadPerSec()) + ffVolts, -12.0, 12.0);
@@ -50,6 +50,13 @@ public class IntakeJointIOSim implements IntakeJointIO {
   }
 
   @Override
+  public void setVelocity(double velocityRadPerSec, double ffVolts) {
+    closedLoop = true;
+    pid.setSetpoint(velocityRadPerSec);
+    this.ffVolts = ffVolts;
+  }
+
+  @Override
   public void setPosition(double positionRad, double ffVolts) {
     closedLoop = true;
     pid.setSetpoint(positionRad);
@@ -59,5 +66,10 @@ public class IntakeJointIOSim implements IntakeJointIO {
   @Override
   public void stop() {
     setVoltage(0.0);
+  }
+
+  @Override
+  public void configurePID(double kP, double kI, double kD) {
+    pid.setPID(kP, kI, kD);
   }
 }

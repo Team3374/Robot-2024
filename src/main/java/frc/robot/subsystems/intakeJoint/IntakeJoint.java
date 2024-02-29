@@ -39,8 +39,8 @@ public class IntakeJoint extends SubsystemBase {
     switch (Constants.currentMode) {
       case REAL:
       case REPLAY:
-        ffModel = new SimpleMotorFeedforward(0.1, 0.05);
-        io.configurePID(1.0, 0.0, 0.0);
+        ffModel = new SimpleMotorFeedforward(0.1, 0.01);
+        io.configurePID(0.1, 0.0, 0);
         break;
       case SIM:
         ffModel = new SimpleMotorFeedforward(0.0, 0.03);
@@ -77,6 +77,10 @@ public class IntakeJoint extends SubsystemBase {
   public void runPosition(double positionRad, double velocityRPM) {
     var velocityRadPerSec = Units.rotationsPerMinuteToRadiansPerSecond(velocityRPM);
     io.setPosition(positionRad, ffModel.calculate(velocityRadPerSec));
+
+    // Log Climber setpoint
+    Logger.recordOutput("IntakeJoint/SetpointRPM", velocityRPM);
+    Logger.recordOutput("IntakeJoint/PositionRad", positionRad);
   }
 
   /** Stops the Intake Joint. */

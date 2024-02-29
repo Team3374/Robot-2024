@@ -11,13 +11,13 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 
-package frc.robot.subsystems.intakeJoint;
+package frc.robot.subsystems.climber;
 
 import org.littletonrobotics.junction.AutoLog;
 
-public interface IntakeJointIO {
+public interface ClimberIO {
   @AutoLog
-  public static class IntakeJointIOInputs {
+  public static class ClimberIOInputs {
     public double positionRad = 0.0;
     public double velocityRadPerSec = 0.0;
     public double appliedVolts = 0.0;
@@ -25,23 +25,20 @@ public interface IntakeJointIO {
   }
 
   /** Updates the set of loggable inputs. */
-  public default void updateInputs(IntakeJointIOInputs inputs) {}
-
-  /** Set Speed for Profiled PID */
-  public default void setSpeed(double speed) {}
+  public default void updateInputs(ClimberIOInputs inputs) {}
 
   /** Run open loop at the specified voltage. */
   public default void setVoltage(double volts) {}
 
+  /** Run closed loop at the specified velocity. */
+  public default void setVelocity(double velocityRadPerSec, double ffVolts) {}
+
   /** Run closed loop to the specified position. */
   public default void setPosition(double positionRad, double ffVolts) {}
 
-  /** Zero Position */
-  public default void zeroPosition() {};
-
-  /** Get raw position */
-  public default double getRawPosition() {return 0;}
-
   /** Stop in open loop. */
   public default void stop() {}
+
+  /** Set velocity PID constants. */
+  public default void configurePID(double kP, double kI, double kD) {}
 }

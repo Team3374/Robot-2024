@@ -9,7 +9,7 @@ public class IntakeAutomated extends Command {
   private double velocityRPM;
 
   /** Creates a new IndexerAutomated */
-  public IntakeAutomated(Intake intake, Double velocityRPM) {
+  public IntakeAutomated(Intake intake, double velocityRPM) {
     this.intake = intake;
     addRequirements(intake);
 
