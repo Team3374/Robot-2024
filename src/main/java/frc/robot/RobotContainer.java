@@ -23,10 +23,9 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
 import frc.robot.commands.IntakeAutomated;
 import frc.robot.commands.RunClimber;
-import frc.robot.commands.TurnForSeconds;
+import frc.robot.commands.auto.TurnForSeconds;
 import frc.robot.subsystems.climber.Climber;
 import frc.robot.subsystems.climber.ClimberIO;
-import frc.robot.subsystems.climber.ClimberIOSim;
 import frc.robot.subsystems.climber.ClimberIOTalonFX;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
@@ -36,17 +35,16 @@ import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOSparkMaxCancoder;
 import frc.robot.subsystems.flywheel.Flywheel;
 import frc.robot.subsystems.flywheel.FlywheelIO;
-import frc.robot.subsystems.flywheel.FlywheelIOSim;
 import frc.robot.subsystems.flywheel.FlywheelIOSparkMax;
 import frc.robot.subsystems.indexer.Indexer;
 import frc.robot.subsystems.indexer.IndexerIO;
-import frc.robot.subsystems.indexer.IndexerIOSim;
 import frc.robot.subsystems.indexer.IndexerIOSparkMax;
 import frc.robot.subsystems.intake.Intake;
 import frc.robot.subsystems.intake.IntakeIO;
-import frc.robot.subsystems.intake.IntakeIOSim;
 import frc.robot.subsystems.intake.IntakeIOTalonFX;
-import frc.robot.subsystems.intakeJoint.IntakeTest;
+import frc.robot.subsystems.intakeJoint.IntakeJoint;
+import frc.robot.subsystems.intakeJoint.IntakeJointIO;
+import frc.robot.subsystems.intakeJoint.IntakeJointIOSparkMax;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 
@@ -60,7 +58,7 @@ public class RobotContainer {
   // Subsystems
   private final Drive drive;
   private final Intake intake;
-  private final IntakeTest intakeJoint;
+  private final IntakeJoint intakeJoint;
   private final Indexer indexer;
   private final Flywheel flywheel;
 
@@ -75,8 +73,6 @@ public class RobotContainer {
   private final LoggedDashboardChooser<Command> autoChooser;
   private final LoggedDashboardNumber intakeSpeedInput =
       new LoggedDashboardNumber("Intake Speed", 3000.0);
-  private final LoggedDashboardNumber intakeJointSpeedInput =
-      new LoggedDashboardNumber("Intake Joint Speed", 3000.0);
   private final LoggedDashboardNumber intakeJointPositionInput =
       new LoggedDashboardNumber("Intake Joint Position", 0);
   private final LoggedDashboardNumber indexerSpeedInput =
@@ -86,11 +82,10 @@ public class RobotContainer {
   private final LoggedDashboardNumber climberSpeedInput =
       new LoggedDashboardNumber("Climber Max Speed", 3000.0);
   private final LoggedDashboardNumber climberUpperLimit =
-      new LoggedDashboardNumber("Climber Encoder Limit", 3000.0);
+      new LoggedDashboardNumber("Climber Encoder Limit", 3000);
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
-    intakeJoint = new IntakeTest();
     switch (Constants.currentMode) {
       case REAL:
         // Real robot, instantiate hardware IO implementations
@@ -102,13 +97,13 @@ public class RobotContainer {
                 new ModuleIOSparkMaxCancoder(2),
                 new ModuleIOSparkMaxCancoder(3));
         intake = new Intake(new IntakeIOTalonFX());
-        // intakeJoint = new IntakeJoint(new IntakeJointIOSparkMax());
+        intakeJoint = new IntakeJoint(new IntakeJointIOSparkMax());
 
         indexer = new Indexer(new IndexerIOSparkMax());
         flywheel = new Flywheel(new FlywheelIOSparkMax());
 
-        leftClimber = new Climber(new ClimberIOTalonFX(54));
-        rightClimber = new Climber(new ClimberIOTalonFX(55));
+        leftClimber = new Climber(new ClimberIOTalonFX(54, (int) climberUpperLimit.get()));
+        rightClimber = new Climber(new ClimberIOTalonFX(55, (int) climberUpperLimit.get()));
         break;
 
       case SIM:
@@ -120,13 +115,13 @@ public class RobotContainer {
                 new ModuleIOSim(),
                 new ModuleIOSim(),
                 new ModuleIOSim());
-        intake = new Intake(new IntakeIOSim());
-        // intakeJoint = new IntakeJoint(new IntakeJointIOSim());
-        indexer = new Indexer(new IndexerIOSim());
-        flywheel = new Flywheel(new FlywheelIOSim());
+        intake = new Intake(new IntakeIO() {});
+        intakeJoint = new IntakeJoint(new IntakeJointIO() {});
+        indexer = new Indexer(new IndexerIO() {});
+        flywheel = new Flywheel(new FlywheelIO() {});
 
-        leftClimber = new Climber(new ClimberIOSim());
-        rightClimber = new Climber(new ClimberIOSim());
+        leftClimber = new Climber(new ClimberIO() {});
+        rightClimber = new Climber(new ClimberIO() {});
         break;
 
       default:
@@ -139,7 +134,7 @@ public class RobotContainer {
                 new ModuleIO() {},
                 new ModuleIO() {});
         intake = new Intake(new IntakeIO() {});
-        // intakeJoint = new IntakeJoint(new IntakeJointIO() {});
+        intakeJoint = new IntakeJoint(new IntakeJointIO() {});
         indexer = new Indexer(new IndexerIO() {});
         flywheel = new Flywheel(new FlywheelIO() {});
 
@@ -199,29 +194,44 @@ public class RobotContainer {
             () -> -controller.getLeftX(),
             () -> -controller.getRightX()));
 
-    intake.setDefaultCommand(new IntakeAutomated(intake, intakeSpeedInput.get()));
     intakeJoint.setDefaultCommand(Commands.run(() -> intakeJoint.runPosition(0), intakeJoint));
 
     controller
-        .a()
-        .whileTrue(
-            Commands.startEnd(
-                () -> intake.runVelocity(intakeSpeedInput.get()), intake::stop, intake))
+        .rightBumper()
         .whileTrue(
             Commands.startEnd(
                 () -> intakeJoint.runPosition(intakeJointPositionInput.get()),
                 intakeJoint::stop,
-                intakeJoint));
+                intakeJoint))
+        .whileTrue(new IntakeAutomated(intake, intakeSpeedInput.get()));
     controller
-        .b()
-        .whileTrue(
-            Commands.startEnd(
-                () -> intake.runVelocity(-intakeSpeedInput.get()), intake::stop, intake))
+        .leftBumper()
         .whileTrue(
             Commands.startEnd(
                 () -> intakeJoint.runPosition(intakeJointPositionInput.get()),
                 intakeJoint::stop,
-                intakeJoint));
+                intakeJoint))
+        .whileTrue(
+            Commands.startEnd(
+                () -> intake.runVelocity(-intakeSpeedInput.get()), intake::stop, intake));
+    controllerTwo
+        .rightBumper()
+        .whileTrue(
+            Commands.startEnd(
+                () -> flywheel.runVelocity(flywheelSpeedInput.get()), flywheel::stop, flywheel));
+    controllerTwo
+        .leftBumper()
+        .whileTrue(
+            Commands.startEnd(
+                () -> intakeJoint.runPosition(intakeJointPositionInput.get()),
+                intakeJoint::stop,
+                intakeJoint))
+        .whileTrue(
+            Commands.startEnd(
+                () -> indexer.runVelocity(indexerSpeedInput.get()), indexer::stop, indexer))
+        .whileTrue(
+            Commands.startEnd(
+                () -> intake.runVelocity(intakeSpeedInput.get()), intake::stop, intake));
     controller
         .x()
         .whileTrue(
@@ -232,45 +242,26 @@ public class RobotContainer {
         .whileTrue(
             Commands.startEnd(
                 () -> indexer.runVelocity(-indexerSpeedInput.get()), indexer::stop, indexer));
+    controllerTwo
+        .povUp()
+        .whileTrue(new RunClimber(leftClimber, rightClimber, climberSpeedInput.get(), false));
     controller
-        .rightBumper()
+        .povDown()
+        .whileTrue(new RunClimber(leftClimber, rightClimber, climberSpeedInput.get(), true));
+    controllerTwo
+        .leftStick()
         .whileTrue(
             Commands.startEnd(
-                () -> flywheel.runVelocity(flywheelSpeedInput.get()), flywheel::stop, flywheel));
-    controller
-        .leftBumper()
+                () -> leftClimber.runVelocity(controllerTwo.getLeftY() * climberSpeedInput.get()),
+                leftClimber::stop,
+                leftClimber));
+    controllerTwo
+        .rightStick()
         .whileTrue(
             Commands.startEnd(
-                () -> flywheel.runVelocity(-flywheelSpeedInput.get()), flywheel::stop, flywheel));
-
-    controller
-        .rightTrigger()
-        .whileTrue(
-            new RunClimber(
-                leftClimber,
-                rightClimber,
-                climberSpeedInput.get(),
-                climberUpperLimit.get(),
-                () -> controller.getRightTriggerAxis()));
-    controller
-        .leftTrigger()
-        .whileTrue(
-            new RunClimber(
-                leftClimber,
-                rightClimber,
-                climberSpeedInput.get(),
-                0,
-                () -> -controller.getLeftTriggerAxis()));
-    controllerTwo
-    .leftStick()
-    .whileTrue(
-        Commands.startEnd(() -> leftClimber.runVelocity(controllerTwo.getLeftY() * climberSpeedInput.get()), 
-        leftClimber::stop, leftClimber));
-    controllerTwo
-    .rightStick()
-    .whileTrue(
-        Commands.startEnd(() -> rightClimber.runVelocity(controllerTwo.getRightY() * climberSpeedInput.get()), 
-        rightClimber::stop, rightClimber));
+                () -> rightClimber.runVelocity(controllerTwo.getRightY() * climberSpeedInput.get()),
+                rightClimber::stop,
+                rightClimber));
   }
 
   /**

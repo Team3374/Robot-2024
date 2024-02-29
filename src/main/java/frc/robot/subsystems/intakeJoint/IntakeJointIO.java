@@ -37,10 +37,13 @@ public interface IntakeJointIO {
   public default void setPosition(double positionRad, double ffVolts) {}
 
   /** Zero Position */
-  public default void zeroPosition() {};
+  public default void zeroPosition() {}
+  ;
 
   /** Get raw position */
-  public default double getRawPosition() {return 0;}
+  public default double getRawPosition() {
+    return 0;
+  }
 
   /** Stop in open loop. */
   public default void stop() {}

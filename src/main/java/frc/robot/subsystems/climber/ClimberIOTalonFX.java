@@ -16,8 +16,8 @@ package frc.robot.subsystems.climber;
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.configs.SoftwareLimitSwitchConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -34,8 +34,12 @@ public class ClimberIOTalonFX implements ClimberIO {
   private final StatusSignal<Double> leaderAppliedVolts;
   private final StatusSignal<Double> leaderCurrent;
 
-  public ClimberIOTalonFX(int id) {
+  private int limit;
+
+  public ClimberIOTalonFX(int id, int limit) {
     leader = new TalonFX(id);
+
+    this.limit = limit;
 
     leaderPosition = leader.getPosition();
     leaderVelocity = leader.getVelocity();
@@ -45,7 +49,7 @@ public class ClimberIOTalonFX implements ClimberIO {
     var config = new TalonFXConfiguration();
     config.CurrentLimits.StatorCurrentLimit = 30.0;
     config.CurrentLimits.StatorCurrentLimitEnable = true;
-    config.MotorOutput.NeutralMode = NeutralModeValue.Coast;
+    config.MotorOutput.NeutralMode = NeutralModeValue.Brake;
     leader.getConfigurator().apply(config);
 
     leader.setInverted(true);
@@ -66,6 +70,23 @@ public class ClimberIOTalonFX implements ClimberIO {
   }
 
   @Override
+  public void softLimitEnabled(boolean isEnabled) {
+    var limitSwitchConfig = new SoftwareLimitSwitchConfigs();
+
+    if (isEnabled) {
+      limitSwitchConfig.withForwardSoftLimitThreshold(limit);
+      limitSwitchConfig.withReverseSoftLimitThreshold(0);
+      limitSwitchConfig.withForwardSoftLimitEnable(true);
+      limitSwitchConfig.withReverseSoftLimitEnable(true);
+    } else {
+      limitSwitchConfig.withForwardSoftLimitEnable(false);
+      limitSwitchConfig.withReverseSoftLimitEnable(false);
+    }
+
+    leader.getConfigurator().apply(limitSwitchConfig);
+  }
+
+  @Override
   public void setVoltage(double volts) {
     leader.setControl(new VoltageOut(volts));
   }
@@ -76,20 +97,6 @@ public class ClimberIOTalonFX implements ClimberIO {
         new VelocityVoltage(
             Units.radiansToRotations(velocityRadPerSec),
             0.0,
-            true,
-            ffVolts,
-            0,
-            false,
-            false,
-            false));
-  }
-
-  @Override
-  public void setPosition(double positionRad, double ffVolts) {
-    leader.setControl(
-        new PositionVoltage(
-            positionRad,
-            2, // arbitrary!
             true,
             ffVolts,
             0,

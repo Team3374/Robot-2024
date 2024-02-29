@@ -68,6 +68,11 @@ public class Climber extends SubsystemBase {
     Logger.processInputs("Climber", inputs);
   }
 
+  /** Enables/Disables software limit */
+  public void softLimitEnabled(boolean isEnabled) {
+    io.softLimitEnabled(isEnabled);
+  }
+
   /** Run open loop at the specified voltage. */
   public void runVolts(double volts) {
     io.setVoltage(volts);
@@ -80,16 +85,6 @@ public class Climber extends SubsystemBase {
 
     // Log Climber setpoint
     Logger.recordOutput("Climber/SetpointRPM", velocityRPM);
-  }
-
-  /** Run closed loop at to the specified position. */
-  public void runPosition(double positionRad, double velocityRPM) {
-    var velocityRadPerSec = Units.rotationsPerMinuteToRadiansPerSecond(velocityRPM);
-    io.setPosition(positionRad, ffModel.calculate(velocityRadPerSec));
-
-    // Log Climber setpoint
-    Logger.recordOutput("Climber/SetpointRPM", velocityRPM);
-    Logger.recordOutput("Climber/PositionRad", positionRad);
   }
 
   /** Stops the Climber. */

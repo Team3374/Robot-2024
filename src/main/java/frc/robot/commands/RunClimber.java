@@ -2,31 +2,23 @@ package frc.robot.commands;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.climber.Climber;
-import java.util.function.DoubleSupplier;
 
 public class RunClimber extends Command {
   private Climber leftClimber;
   private Climber rightClimber;
 
-  private double maxVelocity;
-  private double limit;
+  private double velocity;
 
-  private DoubleSupplier input;
+  private boolean reversed;
 
   /** Creates a new ClimberToPosition */
-  public RunClimber(
-      Climber leftClimber,
-      Climber rightClimber,
-      double maxVelocity,
-      double limit,
-      DoubleSupplier input) {
+  public RunClimber(Climber leftClimber, Climber rightClimber, double velocity, boolean reversed) {
     this.leftClimber = leftClimber;
     this.rightClimber = rightClimber;
 
-    this.maxVelocity = maxVelocity;
-    this.limit = limit;
+    this.velocity = velocity;
 
-    this.input = input;
+    this.reversed = reversed;
 
     addRequirements(leftClimber, rightClimber);
   }
@@ -36,27 +28,20 @@ public class RunClimber extends Command {
   public void initialize() {
     leftClimber.stop();
     rightClimber.stop();
+
+    leftClimber.softLimitEnabled(true);
+    rightClimber.softLimitEnabled(true);
   }
 
   /** Called every time the scheduler runs while the command is scheduled */
   @Override
   public void execute() {
-    double currentInput = input.getAsDouble();
-
-    if (currentInput > 0.05 && leftClimber.getPosition() < limit) {
-      leftClimber.runVelocity(maxVelocity * currentInput);
-    } else if (currentInput < 0.05 && leftClimber.getPosition() > limit) {
-      leftClimber.runVelocity(maxVelocity * currentInput);
+    if (!reversed) {
+      leftClimber.runVelocity(velocity);
+      rightClimber.runVelocity(velocity);
     } else {
-      leftClimber.stop();
-    }
-
-    if (currentInput > 0.05 && rightClimber.getPosition() < limit) {
-      rightClimber.runVelocity(maxVelocity * currentInput);
-    } else if (currentInput < 0.05 && rightClimber.getPosition() > limit) {
-      rightClimber.runVelocity(maxVelocity * currentInput);
-    } else {
-      rightClimber.stop();
+      leftClimber.runVelocity(-velocity);
+      rightClimber.runVelocity(-velocity);
     }
   }
 
@@ -65,6 +50,9 @@ public class RunClimber extends Command {
   public void end(boolean interrupted) {
     leftClimber.stop();
     rightClimber.stop();
+
+    leftClimber.softLimitEnabled(false);
+    rightClimber.softLimitEnabled(false);
   }
 
   /** Returns true when the command should end */

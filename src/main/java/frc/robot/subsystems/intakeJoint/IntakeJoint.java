@@ -13,105 +13,57 @@
 
 package frc.robot.subsystems.intakeJoint;
 
-import static edu.wpi.first.units.Units.*;
+import edu.wpi.first.math.controller.ProfiledPIDController;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.math.trajectory.TrapezoidProfile.State;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.ProfiledPIDSubsystem;
 
-import edu.wpi.first.math.controller.SimpleMotorFeedforward;
-import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-import frc.robot.Constants;
-import org.littletonrobotics.junction.AutoLogOutput;
-import org.littletonrobotics.junction.Logger;
-
-public class IntakeJoint extends SubsystemBase {
+public class IntakeJoint extends ProfiledPIDSubsystem {
   private final IntakeJointIO io;
   private final IntakeJointIOInputsAutoLogged inputs = new IntakeJointIOInputsAutoLogged();
-  private final SimpleMotorFeedforward ffModel;
-  private final SysIdRoutine sysId;
 
   /** Creates a new Intake Joint. */
   public IntakeJoint(IntakeJointIO io) {
+    super(new ProfiledPIDController(.1, 0, 0, new TrapezoidProfile.Constraints(2, 5)), 0);
     this.io = io;
 
-    // Switch constants based on mode (the physics simulator is treated as a
-    // separate robot with different tuning)
-    switch (Constants.currentMode) {
-      case REAL:
-      case REPLAY:
-        ffModel = new SimpleMotorFeedforward(0.1, 0.01);
-        io.configurePID(0.1, 0.0, 0);
-        break;
-      case SIM:
-        ffModel = new SimpleMotorFeedforward(0.0, 0.03);
-        io.configurePID(0.5, 0.0, 0.0);
-        break;
-      default:
-        ffModel = new SimpleMotorFeedforward(0.0, 0.0);
-        break;
-    }
+    io.zeroPosition();
 
-    // Configure SysId
-    sysId =
-        new SysIdRoutine(
-            new SysIdRoutine.Config(
-                null,
-                null,
-                null,
-                (state) -> Logger.recordOutput("IntakeJoint/SysIdState", state.toString())),
-            new SysIdRoutine.Mechanism((voltage) -> runVolts(voltage.in(Volts)), null, this));
+    this.enable();
+  }
+
+  public void init() {
+    io.zeroPosition();
   }
 
   @Override
   public void periodic() {
+    SmartDashboard.putNumber("Current Intake", getMeasurement());
+    SmartDashboard.putNumber("Wanted Pos", this.getController().getGoal().position);
+    super.periodic();
+
     io.updateInputs(inputs);
-    Logger.processInputs("IntakeJoint", inputs);
   }
 
   /** Run open loop at the specified voltage. */
-  public void runVolts(double volts) {
-    io.setVoltage(volts);
-  }
-
   /** Run closed loop at to the specified position. */
-  public void runPosition(double positionRad, double velocityRPM) {
-    var velocityRadPerSec = Units.rotationsPerMinuteToRadiansPerSecond(velocityRPM);
-    io.setPosition(positionRad, ffModel.calculate(velocityRadPerSec));
-
-    // Log Climber setpoint
-    Logger.recordOutput("IntakeJoint/SetpointRPM", velocityRPM);
-    Logger.recordOutput("IntakeJoint/PositionRad", positionRad);
+  public void runPosition(double positionRad) {
+    this.setGoal(positionRad);
   }
 
   /** Stops the Intake Joint. */
   public void stop() {
-    io.stop();
+    io.setSpeed(0);
   }
 
-  /** Returns a command to run a quasistatic test in the specified direction. */
-  public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
-    return sysId.quasistatic(direction);
+  @Override
+  protected void useOutput(double output, State setpoint) {
+    io.setSpeed(output);
   }
 
-  /** Returns a command to run a dynamic test in the specified direction. */
-  public Command sysIdDynamic(SysIdRoutine.Direction direction) {
-    return sysId.dynamic(direction);
-  }
-
-  /** Returns the current velocity in RPM. */
-  @AutoLogOutput
-  public double getVelocityRPM() {
-    return Units.radiansPerSecondToRotationsPerMinute(inputs.velocityRadPerSec);
-  }
-
-  /** Returns the current position in degrees. */
-  @AutoLogOutput
-  public double getPosition() {
-    return inputs.positionRad;
-  }
-
-  /** Returns the current velocity in radians per second. */
-  public double getCharacterizationVelocity() {
-    return inputs.velocityRadPerSec;
+  @Override
+  protected double getMeasurement() {
+    return io.getRawPosition();
   }
 }
