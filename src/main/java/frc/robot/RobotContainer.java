@@ -23,6 +23,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
 import frc.robot.commands.IntakeAutomated;
 import frc.robot.commands.RunClimber;
+import frc.robot.commands.auto.DriveBack;
 import frc.robot.commands.auto.TurnForSeconds;
 import frc.robot.subsystems.climber.Climber;
 import frc.robot.subsystems.climber.ClimberIO;
@@ -144,37 +145,14 @@ public class RobotContainer {
     }
 
     // Set up auto routines
-    // NamedCommands.registerCommand(
-    // "Run Flywheel",
-    // Commands.startEnd(
-    // () -> flywheel.runVelocity(flywheelSpeedInput.get()), flywheel::stop, flywheel)
-    // .withTimeout(5.0));
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
     // Set up SysId routines
-    autoChooser.addOption(
-        "Drive SysId (Quasistatic Forward)",
-        drive.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
-    autoChooser.addOption(
-        "Drive SysId (Quasistatic Reverse)",
-        drive.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
-    autoChooser.addOption(
-        "Drive SysId (Dynamic Forward)", drive.sysIdDynamic(SysIdRoutine.Direction.kForward));
-    autoChooser.addOption(
-        "Drive SysId (Dynamic Reverse)", drive.sysIdDynamic(SysIdRoutine.Direction.kReverse));
-    autoChooser.addOption("Turn for Seconds", new TurnForSeconds(drive, 3));
     // autoChooser.addOption(
-    //     "Flywheel SysId (Quasistatic Forward)",
-    //     flywheel.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
-    // autoChooser.addOption(
-    //     "Flywheel SysId (Quasistatic Reverse)",
-    //     flywheel.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
-    // autoChooser.addOption(
-    //     "Flywheel SysId (Dynamic Forward)",
-    // flywheel.sysIdDynamic(SysIdRoutine.Direction.kForward));
-    // autoChooser.addOption(
-    //     "Flywheel SysId (Dynamic Reverse)",
-    // flywheel.sysIdDynamic(SysIdRoutine.Direction.kReverse));
-
+    //     "Drive SysId (Quasistatic Forward)",
+    //     drive.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
+    autoChooser.addOption(
+        "Drive Back",
+        new DriveBack(drive));
     // Configure the button bindings
     configureButtonBindings();
     intakeJoint.init();
