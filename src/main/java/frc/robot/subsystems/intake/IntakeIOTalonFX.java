@@ -24,7 +24,7 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.math.util.Units;
 
 public class IntakeIOTalonFX implements IntakeIO {
-  private static final double GEAR_RATIO = 1.7;
+  private static final double GEAR_RATIO = 4;
 
   private final TalonFX leader = new TalonFX(50);
 
@@ -38,6 +38,7 @@ public class IntakeIOTalonFX implements IntakeIO {
     config.CurrentLimits.StatorCurrentLimit = 30.0;
     config.CurrentLimits.StatorCurrentLimitEnable = true;
     config.MotorOutput.NeutralMode = NeutralModeValue.Coast;
+    leader.setInverted(true);
     leader.getConfigurator().apply(config);
 
     BaseStatusSignal.setUpdateFrequencyForAll(

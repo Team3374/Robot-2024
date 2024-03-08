@@ -25,7 +25,7 @@ public class IntakeJoint extends ProfiledPIDSubsystem {
 
   /** Creates a new Intake Joint. */
   public IntakeJoint(IntakeJointIO io) {
-    super(new ProfiledPIDController(.1, 0, 0, new TrapezoidProfile.Constraints(2, 5)), 0);
+    super(new ProfiledPIDController(.1, 0, 0, new TrapezoidProfile.Constraints(100, 100)), 0);
     this.io = io;
 
     io.zeroPosition();

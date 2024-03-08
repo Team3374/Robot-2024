@@ -5,29 +5,30 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.climber.Climber;
 import java.util.function.DoubleSupplier;
 
-public class RunClimber extends Command {
+public class RunSingleClimber extends Command {
   private Climber leftClimber;
   private Climber rightClimber;
 
-  private double velocity;
-  private DoubleSupplier limit;
+  private double maxVelocity;
 
-  private boolean reversed;
+  private DoubleSupplier leftInput;
+  private DoubleSupplier rightInput;
 
   /** Creates a new ClimberToPosition */
-  public RunClimber(
+  public RunSingleClimber(
       Climber leftClimber,
       Climber rightClimber,
-      double velocity,
-      DoubleSupplier limit,
-      boolean reversed) {
+      double maxVelocity,
+      DoubleSupplier leftInput,
+      DoubleSupplier rightInput) {
+
     this.leftClimber = leftClimber;
     this.rightClimber = rightClimber;
 
-    this.velocity = velocity;
-    this.limit = limit;
+    this.maxVelocity = maxVelocity;
 
-    this.reversed = reversed;
+    this.leftInput = leftInput;
+    this.rightInput = rightInput;
 
     addRequirements(leftClimber, rightClimber);
   }
@@ -35,29 +36,32 @@ public class RunClimber extends Command {
   /** Called when the command is initially scheduled */
   @Override
   public void initialize() {
-    leftClimber.stop();
-    rightClimber.stop();
-
-    // leftClimber.softLimitEnabled(true);
-    // rightClimber.softLimitEnabled(true);
+    // leftClimber.softLimitEnabled(false);
+    // rightClimber.softLimitEnabled(false);
   }
 
   /** Called every time the scheduler runs while the command is scheduled */
   @Override
   public void execute() {
-    SmartDashboard.putNumber("Climber Position", leftClimber.getPosition());
-    if (!reversed
-        && (leftClimber.getPosition() < limit.getAsDouble()
-            && rightClimber.getPosition() < limit.getAsDouble())) {
-      leftClimber.runVelocity(velocity);
-      rightClimber.runVelocity(velocity);
-    } else if (reversed && (leftClimber.getPosition() > 0 || rightClimber.getPosition() > 0)) {
-      leftClimber.runVelocity(-velocity);
-      rightClimber.runVelocity(-velocity);
+    double leftInputAsDouble = leftInput.getAsDouble();
+    double rightInputAsDouble = rightInput.getAsDouble();
+
+    if (Math.abs(leftInputAsDouble) > 0.05) {
+      leftClimber.runVelocity(leftInputAsDouble * maxVelocity);
     } else {
       leftClimber.stop();
+    }
+
+    if (Math.abs(rightInputAsDouble) > 0.05) {
+      rightClimber.runVelocity(rightInputAsDouble * maxVelocity);
+    } else {
       rightClimber.stop();
     }
+
+    SmartDashboard.putString("Climber Mode", "Manual");
+
+    SmartDashboard.putNumber("Left Input", leftInputAsDouble);
+    SmartDashboard.putNumber("Right Input", rightInputAsDouble);
   }
 
   /** Called once the command ends or is interrupted */
@@ -65,6 +69,8 @@ public class RunClimber extends Command {
   public void end(boolean interrupted) {
     leftClimber.stop();
     rightClimber.stop();
+
+    SmartDashboard.putString("Climber Mode", "Not Manual");
 
     // leftClimber.softLimitEnabled(false);
     // rightClimber.softLimitEnabled(false);

@@ -36,6 +36,8 @@ public class IntakeJointIOSparkMax implements IntakeJointIO {
     leader.enableVoltageCompensation(12.0);
     leader.setSmartCurrentLimit(30);
 
+    leader.setInverted(true);
+
     encoder.setPosition(0);
 
     leader.burnFlash();

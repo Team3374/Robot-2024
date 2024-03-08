@@ -16,7 +16,7 @@ package frc.robot.subsystems.climber;
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.configs.Slot0Configs;
-import com.ctre.phoenix6.configs.SoftwareLimitSwitchConfigs;
+// import com.ctre.phoenix6.configs.SoftwareLimitSwitchConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
@@ -25,7 +25,7 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.math.util.Units;
 
 public class ClimberIOTalonFX implements ClimberIO {
-  private static final double GEAR_RATIO = 9;
+  private static final double GEAR_RATIO = 63;
 
   private final TalonFX leader;
 
@@ -34,12 +34,12 @@ public class ClimberIOTalonFX implements ClimberIO {
   private final StatusSignal<Double> leaderAppliedVolts;
   private final StatusSignal<Double> leaderCurrent;
 
-  private int limit;
+  // private int limit;
 
-  public ClimberIOTalonFX(int id, int limit) {
+  public ClimberIOTalonFX(int id) { // int limit) {
     leader = new TalonFX(id);
 
-    this.limit = limit;
+    // this.limit = limit;
 
     leaderPosition = leader.getPosition();
     leaderVelocity = leader.getVelocity();
@@ -52,7 +52,7 @@ public class ClimberIOTalonFX implements ClimberIO {
     config.MotorOutput.NeutralMode = NeutralModeValue.Brake;
     leader.getConfigurator().apply(config);
 
-    leader.setInverted(true);
+    leader.setInverted(false);
 
     BaseStatusSignal.setUpdateFrequencyForAll(
         50.0, leaderPosition, leaderVelocity, leaderAppliedVolts, leaderCurrent);
@@ -69,22 +69,22 @@ public class ClimberIOTalonFX implements ClimberIO {
     inputs.currentAmps = new double[] {leaderCurrent.getValueAsDouble()};
   }
 
-  @Override
-  public void softLimitEnabled(boolean isEnabled) {
-    var limitSwitchConfig = new SoftwareLimitSwitchConfigs();
+  // @Override
+  // public void softLimitEnabled(boolean isEnabled) {
+  //   var limitSwitchConfig = new SoftwareLimitSwitchConfigs();
 
-    if (isEnabled) {
-      limitSwitchConfig.withForwardSoftLimitThreshold(limit);
-      limitSwitchConfig.withReverseSoftLimitThreshold(0);
-      limitSwitchConfig.withForwardSoftLimitEnable(true);
-      limitSwitchConfig.withReverseSoftLimitEnable(true);
-    } else {
-      limitSwitchConfig.withForwardSoftLimitEnable(false);
-      limitSwitchConfig.withReverseSoftLimitEnable(false);
-    }
+  //   if (isEnabled) {
+  //     limitSwitchConfig.withForwardSoftLimitThreshold(limit);
+  //     limitSwitchConfig.withReverseSoftLimitThreshold(0);
+  //     limitSwitchConfig.withForwardSoftLimitEnable(true);
+  //     limitSwitchConfig.withReverseSoftLimitEnable(true);
+  //   } else {
+  //     limitSwitchConfig.withForwardSoftLimitEnable(false);
+  //     limitSwitchConfig.withReverseSoftLimitEnable(false);
+  //   }
 
-    leader.getConfigurator().apply(limitSwitchConfig);
-  }
+  //   leader.getConfigurator().apply(limitSwitchConfig);
+  // }
 
   @Override
   public void setVoltage(double volts) {
@@ -97,7 +97,7 @@ public class ClimberIOTalonFX implements ClimberIO {
         new VelocityVoltage(
             Units.radiansToRotations(velocityRadPerSec),
             0.0,
-            true,
+            false,
             ffVolts,
             0,
             false,

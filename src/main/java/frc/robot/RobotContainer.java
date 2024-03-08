@@ -14,17 +14,20 @@
 package frc.robot;
 
 import com.pathplanner.lib.auto.AutoBuilder;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
-import frc.robot.commands.IntakeAutomated;
 import frc.robot.commands.RunClimber;
+import frc.robot.commands.RunSingleClimber;
+import frc.robot.commands.auto.DelayDriveBack;
 import frc.robot.commands.auto.DriveBack;
-import frc.robot.commands.auto.TurnForSeconds;
+import frc.robot.commands.auto.ShootDriveBack;
+import frc.robot.commands.auto.ShootDriveLeft;
 import frc.robot.subsystems.climber.Climber;
 import frc.robot.subsystems.climber.ClimberIO;
 import frc.robot.subsystems.climber.ClimberIOTalonFX;
@@ -40,12 +43,6 @@ import frc.robot.subsystems.flywheel.FlywheelIOSparkMax;
 import frc.robot.subsystems.indexer.Indexer;
 import frc.robot.subsystems.indexer.IndexerIO;
 import frc.robot.subsystems.indexer.IndexerIOSparkMax;
-import frc.robot.subsystems.intake.Intake;
-import frc.robot.subsystems.intake.IntakeIO;
-import frc.robot.subsystems.intake.IntakeIOTalonFX;
-import frc.robot.subsystems.intakeJoint.IntakeJoint;
-import frc.robot.subsystems.intakeJoint.IntakeJointIO;
-import frc.robot.subsystems.intakeJoint.IntakeJointIOSparkMax;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 
@@ -58,8 +55,8 @@ import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 public class RobotContainer {
   // Subsystems
   private final Drive drive;
-  private final Intake intake;
-  private final IntakeJoint intakeJoint;
+  //   private final Intake intake;
+  //   private final IntakeJoint intakeJoint;
   private final Indexer indexer;
   private final Flywheel flywheel;
 
@@ -72,10 +69,11 @@ public class RobotContainer {
 
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
-  private final LoggedDashboardNumber intakeSpeedInput =
-      new LoggedDashboardNumber("Intake Speed", 3000.0);
-  private final LoggedDashboardNumber intakeJointPositionInput =
-      new LoggedDashboardNumber("Intake Joint Position", 0);
+  private final LoggedDashboardChooser<Command> allianceChooser;
+  //   private final LoggedDashboardNumber intakeSpeedInput =
+  //       new LoggedDashboardNumber("Intake Speed", 3000.0);
+  //   private final LoggedDashboardNumber intakeJointPositionInput =
+  //       new LoggedDashboardNumber("Intake Joint Position", 20.5);
   private final LoggedDashboardNumber indexerSpeedInput =
       new LoggedDashboardNumber("Indexer Speed", 3000.0);
   private final LoggedDashboardNumber flywheelSpeedInput =
@@ -83,7 +81,7 @@ public class RobotContainer {
   private final LoggedDashboardNumber climberSpeedInput =
       new LoggedDashboardNumber("Climber Max Speed", 3000.0);
   private final LoggedDashboardNumber climberUpperLimit =
-      new LoggedDashboardNumber("Climber Encoder Limit", 3000);
+      new LoggedDashboardNumber("Climber Encoder Limit", 25);
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
@@ -97,14 +95,14 @@ public class RobotContainer {
                 new ModuleIOSparkMaxCancoder(1),
                 new ModuleIOSparkMaxCancoder(2),
                 new ModuleIOSparkMaxCancoder(3));
-        intake = new Intake(new IntakeIOTalonFX());
-        intakeJoint = new IntakeJoint(new IntakeJointIOSparkMax());
+        // intake = new Intake(new IntakeIOTalonFX());
+        // intakeJoint = new IntakeJoint(new IntakeJointIOSparkMax());
 
         indexer = new Indexer(new IndexerIOSparkMax());
         flywheel = new Flywheel(new FlywheelIOSparkMax());
 
-        leftClimber = new Climber(new ClimberIOTalonFX(54, (int) climberUpperLimit.get()));
-        rightClimber = new Climber(new ClimberIOTalonFX(55, (int) climberUpperLimit.get()));
+        leftClimber = new Climber(new ClimberIOTalonFX(54));
+        rightClimber = new Climber(new ClimberIOTalonFX(55));
         break;
 
       case SIM:
@@ -116,8 +114,8 @@ public class RobotContainer {
                 new ModuleIOSim(),
                 new ModuleIOSim(),
                 new ModuleIOSim());
-        intake = new Intake(new IntakeIO() {});
-        intakeJoint = new IntakeJoint(new IntakeJointIO() {});
+        // intake = new Intake(new IntakeIO() {});
+        // intakeJoint = new IntakeJoint(new IntakeJointIO() {});
         indexer = new Indexer(new IndexerIO() {});
         flywheel = new Flywheel(new FlywheelIO() {});
 
@@ -134,8 +132,8 @@ public class RobotContainer {
                 new ModuleIO() {},
                 new ModuleIO() {},
                 new ModuleIO() {});
-        intake = new Intake(new IntakeIO() {});
-        intakeJoint = new IntakeJoint(new IntakeJointIO() {});
+        // intake = new Intake(new IntakeIO() {});
+        // intakeJoint = new IntakeJoint(new IntakeJointIO() {});
         indexer = new Indexer(new IndexerIO() {});
         flywheel = new Flywheel(new FlywheelIO() {});
 
@@ -150,12 +148,26 @@ public class RobotContainer {
     // autoChooser.addOption(
     //     "Drive SysId (Quasistatic Forward)",
     //     drive.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
-    autoChooser.addOption(
-        "Drive Back",
-        new DriveBack(drive));
+    autoChooser.addOption("Drive Back", new DriveBack(drive, 1));
+    autoChooser.addOption("Delayed Drive Back", new DelayDriveBack(drive, 1));
+    autoChooser.addOption("Shoot and Drive (Center)", new ShootDriveBack(drive, indexer, flywheel));
+    autoChooser.addOption("Shoot and Drive (Left)", new ShootDriveLeft(drive, indexer, flywheel));
+    // autoChooser.addOption(
+    // "Shoot and Drive", new ShootDriveBack(drive, intake, intakeJoint, indexer, flywheel));
+    autoChooser.addOption("Do Nothing", null);
+
+    allianceChooser =
+        new LoggedDashboardChooser<>("Alliance Selection", AutoBuilder.buildAutoChooser());
+
+    allianceChooser.addOption(
+        "Red",
+        Commands.runOnce(() -> drive.setPose(new Pose2d(0, 0, new Rotation2d(135))), drive));
+    allianceChooser.addOption(
+        "Blue", Commands.runOnce(() -> drive.setPose(new Pose2d(0, 0, new Rotation2d(45))), drive));
+
     // Configure the button bindings
     configureButtonBindings();
-    intakeJoint.init();
+    // intakeJoint.init();
   }
 
   /**
@@ -168,48 +180,77 @@ public class RobotContainer {
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
             drive,
-            () -> -controller.getLeftY(),
-            () -> -controller.getLeftX(),
+            () -> controller.getLeftY(),
+            () -> controller.getLeftX(),
             () -> -controller.getRightX()));
 
-    intakeJoint.setDefaultCommand(Commands.run(() -> intakeJoint.runPosition(0), intakeJoint));
+    // intakeJoint.setDefaultCommand(Commands.run(() -> intakeJoint.runPosition(0), intakeJoint));
 
-    controller
-        .rightBumper()
-        .whileTrue(
-            Commands.startEnd(
-                () -> intakeJoint.runPosition(intakeJointPositionInput.get()),
-                intakeJoint::stop,
-                intakeJoint))
-        .whileTrue(new IntakeAutomated(intake, intakeSpeedInput.get()));
-    controller
-        .leftBumper()
-        .whileTrue(
-            Commands.startEnd(
-                () -> intakeJoint.runPosition(intakeJointPositionInput.get()),
-                intakeJoint::stop,
-                intakeJoint))
-        .whileTrue(
-            Commands.startEnd(
-                () -> intake.runVelocity(-intakeSpeedInput.get()), intake::stop, intake));
+    // controller
+    //     .rightBumper()
+    //     .whileTrue(
+    //         Commands.startEnd(
+    //             () -> intakeJoint.runPosition(intakeJointPositionInput.get()),
+    //             () -> intakeJoint.runPosition(0),
+    //             intakeJoint))
+    //     .whileTrue(new IntakeAutomated(intake, intakeSpeedInput.get()));
+    // controller
+    //     .leftBumper()
+    //     // .whileTrue(
+    //     //     Commands.startEnd(
+    //     //         () -> intakeJoint.runPosition(intakeJointPositionInput.get()),
+    //     //         () -> intakeJoint.runPosition(0),
+    //     //         intakeJoint))
+    //     .whileTrue(
+    //         Commands.startEnd(
+    //             () -> intake.runVelocity(intakeSpeedInput.get()), intake::stop, intake))
+    //     .whileTrue(
+    //         Commands.startEnd(
+    //             () -> intakeJoint.runPosition(10), () -> intakeJoint.runPosition(0),
+    // intakeJoint));
+    // controller
+    //     .a()
+    //     .whileTrue(
+    //         Commands.startEnd(
+    //             () -> intake.runVelocity(-intakeSpeedInput.get()), intake::stop, intake));
+    // controller
+    //     .b()
+    //     .whileTrue(
+    //         Commands.startEnd(
+    //             () -> intake.runVelocity(intakeSpeedInput.get()), intake::stop, intake));
     controllerTwo
         .rightBumper()
         .whileTrue(
             Commands.startEnd(
                 () -> flywheel.runVelocity(flywheelSpeedInput.get()), flywheel::stop, flywheel));
     controllerTwo
+        .a()
+        .whileTrue(
+            Commands.startEnd(
+                () -> flywheel.runVelocity(-flywheelSpeedInput.get() * 0.25),
+                flywheel::stop,
+                flywheel))
+        .whileTrue(
+            Commands.startEnd(
+                () -> indexer.runVelocity(-indexerSpeedInput.get() * 0.5), indexer::stop, indexer));
+    controllerTwo
         .leftBumper()
+        // .whileTrue(
+        //     Commands.startEnd(
+        //         () -> intakeJoint.runPosition(intakeJointPositionInput.get()),
+        //         intakeJoint::stop,
+        //         intakeJoint))
         .whileTrue(
             Commands.startEnd(
-                () -> intakeJoint.runPosition(intakeJointPositionInput.get()),
-                intakeJoint::stop,
-                intakeJoint))
+                () -> indexer.runVelocity(indexerSpeedInput.get()), indexer::stop, indexer));
+    // .whileTrue(
+    //     Commands.startEnd(
+    //         () -> intake.runVelocity(-intakeSpeedInput.get()), intake::stop, intake));
+    controllerTwo
+        .b()
         .whileTrue(
             Commands.startEnd(
-                () -> indexer.runVelocity(indexerSpeedInput.get()), indexer::stop, indexer))
-        .whileTrue(
-            Commands.startEnd(
-                () -> intake.runVelocity(intakeSpeedInput.get()), intake::stop, intake));
+                () -> indexer.runVelocity(-indexerSpeedInput.get()), indexer::stop, indexer));
     controller
         .x()
         .whileTrue(
@@ -222,10 +263,22 @@ public class RobotContainer {
                 () -> indexer.runVelocity(-indexerSpeedInput.get()), indexer::stop, indexer));
     controllerTwo
         .povUp()
-        .whileTrue(new RunClimber(leftClimber, rightClimber, climberSpeedInput.get(), false));
-    controller
+        .whileTrue(
+            new RunClimber(
+                leftClimber,
+                rightClimber,
+                climberSpeedInput.get(),
+                () -> climberUpperLimit.get(),
+                false));
+    controllerTwo
         .povDown()
-        .whileTrue(new RunClimber(leftClimber, rightClimber, climberSpeedInput.get(), true));
+        .whileTrue(
+            new RunClimber(
+                leftClimber,
+                rightClimber,
+                climberSpeedInput.get(),
+                () -> climberUpperLimit.get(),
+                true));
     controllerTwo
         .leftStick()
         .whileTrue(
@@ -240,6 +293,20 @@ public class RobotContainer {
                 () -> rightClimber.runVelocity(controllerTwo.getRightY() * climberSpeedInput.get()),
                 rightClimber::stop,
                 rightClimber));
+    controllerTwo
+        .x()
+        .toggleOnTrue(
+            new RunSingleClimber(
+                leftClimber,
+                rightClimber,
+                climberSpeedInput.get(),
+                () -> controllerTwo.getLeftY(),
+                () -> controllerTwo.getRightY()));
+    controller
+        .povUp()
+        .onTrue(
+            Commands.runOnce(
+                () -> drive.setPose(new Pose2d(0, 0, new Rotation2d(180)), 90), drive));
   }
 
   /**
@@ -249,5 +316,14 @@ public class RobotContainer {
    */
   public Command getAutonomousCommand() {
     return autoChooser.get();
+  }
+
+  public Command getEndCommand() {
+    return new RunSingleClimber(
+        leftClimber, rightClimber, climberSpeedInput.get(), () -> -1, () -> -1);
+  }
+
+  public Command getAllianceCommand() {
+    return allianceChooser.get();
   }
 }

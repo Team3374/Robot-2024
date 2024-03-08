@@ -27,8 +27,8 @@ public interface ClimberIO {
   /** Updates the set of loggable inputs. */
   public default void updateInputs(ClimberIOInputs inputs) {}
 
-  /** Enables/Disables software limit */
-  public default void softLimitEnabled(boolean isEnabled) {}
+  // /** Enables/Disables software limit */
+  // public default void softLimitEnabled(boolean isEnabled) {}
 
   /** Run open loop at the specified voltage. */
   public default void setVoltage(double volts) {}

@@ -30,6 +30,7 @@ import org.littletonrobotics.junction.wpilog.WPILOGWriter;
  */
 public class Robot extends LoggedRobot {
   private Command autonomousCommand;
+  private Command allianceCommand;
   private RobotContainer robotContainer;
 
   /**
@@ -133,6 +134,9 @@ public class Robot extends LoggedRobot {
     if (autonomousCommand != null) {
       autonomousCommand.cancel();
     }
+
+    allianceCommand = robotContainer.getAllianceCommand();
+    allianceCommand.initialize();
   }
 
   /** This function is called periodically during operator control. */

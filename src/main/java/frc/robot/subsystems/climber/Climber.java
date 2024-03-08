@@ -68,10 +68,10 @@ public class Climber extends SubsystemBase {
     Logger.processInputs("Climber", inputs);
   }
 
-  /** Enables/Disables software limit */
-  public void softLimitEnabled(boolean isEnabled) {
-    io.softLimitEnabled(isEnabled);
-  }
+  // /** Enables/Disables software limit */
+  // public void softLimitEnabled(boolean isEnabled) {
+  //   io.softLimitEnabled(isEnabled);
+  // }
 
   /** Run open loop at the specified voltage. */
   public void runVolts(double volts) {
