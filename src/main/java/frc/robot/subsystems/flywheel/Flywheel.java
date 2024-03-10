@@ -25,26 +25,33 @@ import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 public class Flywheel extends SubsystemBase {
-  private final FlywheelIO io;
-  private final FlywheelIOInputsAutoLogged inputs = new FlywheelIOInputsAutoLogged();
+  private final FlywheelIO ioTop;
+  private final FlywheelIO ioBottom;
+  private final FlywheelIOInputsAutoLogged inputsTop = new FlywheelIOInputsAutoLogged();
+  private final FlywheelIOInputsAutoLogged inputsBottom = new FlywheelIOInputsAutoLogged();
   private final SimpleMotorFeedforward ffModel;
   private final SysIdRoutine sysId;
 
   /** Creates a new Flywheel. */
-  public Flywheel(FlywheelIO io) {
-    this.io = io;
+  public Flywheel(FlywheelIO ioTop, FlywheelIO ioBottom) {
+    this.ioTop = ioTop;
+    this.ioBottom = ioBottom;
 
+
+    
     // Switch constants based on mode (the physics simulator is treated as a
     // separate robot with different tuning)
     switch (Constants.currentMode) {
       case REAL:
       case REPLAY:
-        ffModel = new SimpleMotorFeedforward(0.1, 0.05);
-        io.configurePID(1.0, 0.0, 0.0);
+        ffModel = new SimpleMotorFeedforward(0.3, 0.019);
+        ioTop.configurePID(0.1, 0.0, 0);
+        ioBottom.configurePID(0.0003, 0.0, 0);
         break;
       case SIM:
         ffModel = new SimpleMotorFeedforward(0.0, 0.03);
-        io.configurePID(0.5, 0.0, 0.0);
+        ioTop.configurePID(0.5, 0.0, 0.0);
+        ioBottom.configurePID(1.0, 0.0, 0.0);
         break;
       default:
         ffModel = new SimpleMotorFeedforward(0.0, 0.0);
@@ -64,27 +71,41 @@ public class Flywheel extends SubsystemBase {
 
   @Override
   public void periodic() {
-    io.updateInputs(inputs);
-    Logger.processInputs("Flywheel", inputs);
+    ioTop.updateInputs(inputsTop);
+    ioBottom.updateInputs(inputsBottom);
+
+    Logger.processInputs("Flywheel Top", inputsTop);
+    Logger.processInputs("Flywheel Bottom", inputsBottom);
   }
 
   /** Run open loop at the specified voltage. */
   public void runVolts(double volts) {
-    io.setVoltage(volts);
+    ioTop.setVoltage(volts);
+    ioBottom.setVoltage(volts);
+  }
+
+  public void runVolts(double voltsTop, double voltsBottom) {
+    ioTop.setVoltage(voltsTop);
+    ioBottom.setVoltage(voltsBottom);
   }
 
   /** Run closed loop at the specified velocity. */
-  public void runVelocity(double velocityRPM) {
-    var velocityRadPerSec = Units.rotationsPerMinuteToRadiansPerSecond(velocityRPM);
-    io.setVelocity(velocityRadPerSec, ffModel.calculate(velocityRadPerSec));
+  public void runVelocity(double velocityRPMTop, double velocityRPMBottom) {
+    var velocityRadPerSecTop = Units.rotationsPerMinuteToRadiansPerSecond(velocityRPMTop);
+    ioTop.setVelocity(velocityRadPerSecTop, ffModel.calculate(velocityRadPerSecTop));
+
+    var velocityRadPerSecBottom = Units.rotationsPerMinuteToRadiansPerSecond(velocityRPMBottom);
+    ioBottom.setVelocity(velocityRadPerSecBottom, ffModel.calculate(velocityRadPerSecBottom));
 
     // Log flywheel setpoint
-    Logger.recordOutput("Flywheel/SetpointRPM", velocityRPM);
+    Logger.recordOutput("FlywheelTop/SetpointRPM", velocityRPMTop);
+    Logger.recordOutput("FlywheelBottom/SetpointRPM", velocityRPMBottom);
   }
 
   /** Stops the flywheel. */
   public void stop() {
-    io.stop();
+    ioTop.stop();
+    ioBottom.stop();
   }
 
   /** Returns a command to run a quasistatic test in the specified direction. */
@@ -99,12 +120,18 @@ public class Flywheel extends SubsystemBase {
 
   /** Returns the current velocity in RPM. */
   @AutoLogOutput
-  public double getVelocityRPM() {
-    return Units.radiansPerSecondToRotationsPerMinute(inputs.velocityRadPerSec);
+  public double getBottomVelocityRPM() {
+    return Units.radiansPerSecondToRotationsPerMinute(inputsBottom.velocityRadPerSec);
+  }
+
+  /** Returns the current velocity in RPM. */
+  @AutoLogOutput
+  public double getTopVelocityRPM() {
+    return Units.radiansPerSecondToRotationsPerMinute(inputsTop.velocityRadPerSec);
   }
 
   /** Returns the current velocity in radians per second. */
-  public double getCharacterizationVelocity() {
-    return inputs.velocityRadPerSec;
+  public double getBottomCharacterizationVelocity() {
+    return inputsBottom.velocityRadPerSec;
   }
 }

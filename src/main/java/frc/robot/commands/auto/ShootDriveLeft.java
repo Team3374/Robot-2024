@@ -11,13 +11,13 @@ import frc.robot.subsystems.indexer.Indexer;
 public class ShootDriveLeft extends SequentialCommandGroup {
   public ShootDriveLeft(Drive drive, Indexer indexer, Flywheel flywheel) {
     addCommands(
-        Commands.runOnce(() -> flywheel.runVelocity(3000), flywheel),
+        // Commands.runOnce(() -> flywheel.runVelocity(3000), flywheel),
         new WaitCommand(2.5),
         Commands.parallel(Commands.runOnce(() -> indexer.runVelocity(3000), indexer)),
         new WaitCommand(2.5),
         Commands.parallel(
-            Commands.runOnce(indexer::stop, indexer),
-            Commands.runOnce(() -> flywheel.runVelocity(0), flywheel)),
+            Commands.runOnce(indexer::stop, indexer)),
+            // Commands.runOnce(() -> flywheel.runVelocity(0), flywheel)),
         Commands.runOnce(() -> drive.runVelocity(new ChassisSpeeds(-1.5, 0, 0)), drive),
         new WaitCommand(1),
         Commands.runOnce(() -> drive.runVelocity(new ChassisSpeeds(0, 0, -1.5)), drive),

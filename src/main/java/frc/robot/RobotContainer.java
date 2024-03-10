@@ -76,8 +76,10 @@ public class RobotContainer {
   //       new LoggedDashboardNumber("Intake Joint Position", 20.5);
   private final LoggedDashboardNumber indexerSpeedInput =
       new LoggedDashboardNumber("Indexer Speed", 3000.0);
-  private final LoggedDashboardNumber flywheelSpeedInput =
-      new LoggedDashboardNumber("Flywheel Speed", 3000.0);
+  private final LoggedDashboardNumber topflywheelSpeedInput =
+      new LoggedDashboardNumber("topFlywheel Speed", 3000.0);
+  private final LoggedDashboardNumber bottomflywheelSpeedInput =
+      new LoggedDashboardNumber("bottomFlywheel Speed", 3000.0);
   private final LoggedDashboardNumber climberSpeedInput =
       new LoggedDashboardNumber("Climber Max Speed", 3000.0);
   private final LoggedDashboardNumber climberUpperLimit =
@@ -99,7 +101,7 @@ public class RobotContainer {
         // intakeJoint = new IntakeJoint(new IntakeJointIOSparkMax());
 
         indexer = new Indexer(new IndexerIOSparkMax());
-        flywheel = new Flywheel(new FlywheelIOSparkMax());
+        flywheel = new Flywheel(new FlywheelIOSparkMax(56), new FlywheelIOSparkMax(52));
 
         leftClimber = new Climber(new ClimberIOTalonFX(54));
         rightClimber = new Climber(new ClimberIOTalonFX(55));
@@ -117,7 +119,7 @@ public class RobotContainer {
         // intake = new Intake(new IntakeIO() {});
         // intakeJoint = new IntakeJoint(new IntakeJointIO() {});
         indexer = new Indexer(new IndexerIO() {});
-        flywheel = new Flywheel(new FlywheelIO() {});
+        flywheel = new Flywheel(new FlywheelIO() {}, new FlywheelIO() {});
 
         leftClimber = new Climber(new ClimberIO() {});
         rightClimber = new Climber(new ClimberIO() {});
@@ -135,7 +137,7 @@ public class RobotContainer {
         // intake = new Intake(new IntakeIO() {});
         // intakeJoint = new IntakeJoint(new IntakeJointIO() {});
         indexer = new Indexer(new IndexerIO() {});
-        flywheel = new Flywheel(new FlywheelIO() {});
+        flywheel = new Flywheel(new FlywheelIO() {}, new FlywheelIO() {});
 
         leftClimber = new Climber(new ClimberIO() {});
         rightClimber = new Climber(new ClimberIO() {});
@@ -160,8 +162,7 @@ public class RobotContainer {
         new LoggedDashboardChooser<>("Alliance Selection", AutoBuilder.buildAutoChooser());
 
     allianceChooser.addOption(
-        "Red",
-        Commands.runOnce(() -> drive.setPose(new Pose2d(0, 0, new Rotation2d(135))), drive));
+        "Red", Commands.runOnce(() -> drive.setPose(new Pose2d(0, 0, new Rotation2d(135))), drive));
     allianceChooser.addOption(
         "Blue", Commands.runOnce(() -> drive.setPose(new Pose2d(0, 0, new Rotation2d(45))), drive));
 
@@ -222,14 +223,15 @@ public class RobotContainer {
         .rightBumper()
         .whileTrue(
             Commands.startEnd(
-                () -> flywheel.runVelocity(flywheelSpeedInput.get()), flywheel::stop, flywheel));
+                () ->
+                    flywheel.runVelocity(
+                        topflywheelSpeedInput.get(), bottomflywheelSpeedInput.get()),
+                flywheel::stop,
+                flywheel));
     controllerTwo
         .a()
         .whileTrue(
-            Commands.startEnd(
-                () -> flywheel.runVelocity(-flywheelSpeedInput.get() * 0.25),
-                flywheel::stop,
-                flywheel))
+            Commands.startEnd(() -> flywheel.runVelocity(-750, -750), flywheel::stop, flywheel))
         .whileTrue(
             Commands.startEnd(
                 () -> indexer.runVelocity(-indexerSpeedInput.get() * 0.5), indexer::stop, indexer));
