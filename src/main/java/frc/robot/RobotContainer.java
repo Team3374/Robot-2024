@@ -228,6 +228,7 @@ public class RobotContainer {
                         topflywheelSpeedInput.get(), bottomflywheelSpeedInput.get()),
                 flywheel::stop,
                 flywheel));
+    //Add amp controls!
     controllerTwo
         .a()
         .whileTrue(
