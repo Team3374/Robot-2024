@@ -37,8 +37,6 @@ public class Flywheel extends SubsystemBase {
     this.ioTop = ioTop;
     this.ioBottom = ioBottom;
 
-
-    
     // Switch constants based on mode (the physics simulator is treated as a
     // separate robot with different tuning)
     switch (Constants.currentMode) {

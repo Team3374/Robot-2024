@@ -28,6 +28,9 @@ import frc.robot.commands.auto.DelayDriveBack;
 import frc.robot.commands.auto.DriveBack;
 import frc.robot.commands.auto.ShootDriveBack;
 import frc.robot.commands.auto.ShootDriveLeft;
+import frc.robot.subsystems.ampJoint.AmpJoint;
+import frc.robot.subsystems.ampJoint.AmpJointIO;
+import frc.robot.subsystems.ampJoint.AmpJointIOTalonFX;
 import frc.robot.subsystems.climber.Climber;
 import frc.robot.subsystems.climber.ClimberIO;
 import frc.robot.subsystems.climber.ClimberIOTalonFX;
@@ -59,6 +62,7 @@ public class RobotContainer {
   //   private final IntakeJoint intakeJoint;
   private final Indexer indexer;
   private final Flywheel flywheel;
+  private final AmpJoint ampJoint;
 
   private final Climber leftClimber;
   private final Climber rightClimber;
@@ -84,6 +88,10 @@ public class RobotContainer {
       new LoggedDashboardNumber("Climber Max Speed", 3000.0);
   private final LoggedDashboardNumber climberUpperLimit =
       new LoggedDashboardNumber("Climber Encoder Limit", 25);
+  private final LoggedDashboardNumber ampJointSpeedInput =
+      new LoggedDashboardNumber("Amp Joint Speed", 3000.0);
+  private final LoggedDashboardNumber ampJointPositionInput =
+      new LoggedDashboardNumber("Amp Joint Target", 10);
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
@@ -102,6 +110,7 @@ public class RobotContainer {
 
         indexer = new Indexer(new IndexerIOSparkMax());
         flywheel = new Flywheel(new FlywheelIOSparkMax(56), new FlywheelIOSparkMax(52));
+        ampJoint = new AmpJoint(new AmpJointIOTalonFX());
 
         leftClimber = new Climber(new ClimberIOTalonFX(54));
         rightClimber = new Climber(new ClimberIOTalonFX(55));
@@ -120,6 +129,7 @@ public class RobotContainer {
         // intakeJoint = new IntakeJoint(new IntakeJointIO() {});
         indexer = new Indexer(new IndexerIO() {});
         flywheel = new Flywheel(new FlywheelIO() {}, new FlywheelIO() {});
+        ampJoint = new AmpJoint(new AmpJointIO() {});
 
         leftClimber = new Climber(new ClimberIO() {});
         rightClimber = new Climber(new ClimberIO() {});
@@ -138,6 +148,7 @@ public class RobotContainer {
         // intakeJoint = new IntakeJoint(new IntakeJointIO() {});
         indexer = new Indexer(new IndexerIO() {});
         flywheel = new Flywheel(new FlywheelIO() {}, new FlywheelIO() {});
+        ampJoint = new AmpJoint(new AmpJointIO() {});
 
         leftClimber = new Climber(new ClimberIO() {});
         rightClimber = new Climber(new ClimberIO() {});
@@ -186,6 +197,7 @@ public class RobotContainer {
             () -> -controller.getRightX()));
 
     // intakeJoint.setDefaultCommand(Commands.run(() -> intakeJoint.runPosition(0), intakeJoint));
+    ampJoint.setDefaultCommand(Commands.run(() -> ampJoint.runPosition(0), ampJoint));
 
     // controller
     //     .rightBumper()
@@ -309,6 +321,16 @@ public class RobotContainer {
         .onTrue(
             Commands.runOnce(
                 () -> drive.setPose(new Pose2d(0, 0, new Rotation2d(180)), 90), drive));
+
+    controller
+        .a()
+        .onTrue(
+            Commands.startEnd(
+                () -> ampJoint.runPosition(ampJointPositionInput.get()), ampJoint::stop, ampJoint));
+
+    controller
+        .b()
+        .onTrue(Commands.startEnd(() -> ampJoint.runPosition(0), ampJoint::stop, ampJoint));
   }
 
   /**

@@ -9,7 +9,7 @@ import frc.robot.subsystems.flywheel.Flywheel;
 import frc.robot.subsystems.indexer.Indexer;
 
 public class ShootDriveBack extends SequentialCommandGroup {
-  //TODO: FIX
+  // TODO: FIX
   public ShootDriveBack(Drive drive, Indexer indexer, Flywheel flywheel) {
     addCommands(
         // Commands.runOnce(() -> flywheel.runVelocity(3000), flywheel),
@@ -23,7 +23,7 @@ public class ShootDriveBack extends SequentialCommandGroup {
             // Commands.runOnce(intake::stop, intake),
             // Commands.runOnce(() -> intakeJoint.runPosition(0), intakeJoint),
             Commands.runOnce(indexer::stop, indexer)),
-            // Commands.runOnce(() -> flywheel.runVelocity(0), flywheel)),
+        // Commands.runOnce(() -> flywheel.runVelocity(0), flywheel)),
         Commands.runOnce(() -> drive.runVelocity(new ChassisSpeeds(-1.5, 0, 0)), drive),
         new WaitCommand(1),
         Commands.runOnce(() -> drive.runVelocity(new ChassisSpeeds(0, 0, 0)), drive));

@@ -64,12 +64,12 @@ public class Module {
         // turnKp.setDefault(4);
         // turnKd.setDefault(0);
 
-        // driveFeedforward = new SimpleMotorFeedforward(driveKs.get(), driveKv.get());
-        // driveFeedback = new PIDController(driveKp.get(), 0.0, driveKd.get());
-        // turnFeedback = new PIDController(turnKp.get(), 0.0, turnKd.get());
-        driveFeedforward = new SimpleMotorFeedforward(0.1, 0.17);
-        driveFeedback = new PIDController(0.05, 0.0, 0.0);
-        turnFeedback = new PIDController(4.0, 0.0, 0.0);
+        driveFeedforward = new SimpleMotorFeedforward(driveKs.get(), driveKv.get());
+        driveFeedback = new PIDController(driveKp.get(), 0.0, driveKd.get());
+        turnFeedback = new PIDController(turnKp.get(), 0.0, turnKd.get());
+        // driveFeedforward = new SimpleMotorFeedforward(0.1, 0.17);
+        // driveFeedback = new PIDController(0.05, 0.0, 0.0);
+        // turnFeedback = new PIDController(4.0, 0.0, 0.0);
         break;
       case SIM:
         // driveFeedforward = new SimpleMotorFeedforward(0.0, 0.13);
@@ -99,17 +99,17 @@ public class Module {
 
     // TODO: REMOVE NEW PID CONTROLLERS
 
-    // if (driveKp.hasChanged()
-    //     || driveKd.hasChanged()
-    //     || driveKs.hasChanged()
-    //     || driveKv.hasChanged()
-    //     || turnKp.hasChanged()
-    //     || turnKd.hasChanged()) {
-    //   driveFeedforward = new SimpleMotorFeedforward(driveKs.get(), driveKv.get());
-    //   driveFeedback = new PIDController(driveKp.get(), 0.0, driveKd.get());
-    //   turnFeedback = new PIDController(turnKp.get(), 0.0, turnKd.get());
-    //   turnFeedback.enableContinuousInput(-Math.PI, Math.PI);
-    // }
+    if (driveKp.hasChanged()
+        || driveKd.hasChanged()
+        || driveKs.hasChanged()
+        || driveKv.hasChanged()
+        || turnKp.hasChanged()
+        || turnKd.hasChanged()) {
+      driveFeedforward = new SimpleMotorFeedforward(driveKs.get(), driveKv.get());
+      driveFeedback = new PIDController(driveKp.get(), 0.0, driveKd.get());
+      turnFeedback = new PIDController(turnKp.get(), 0.0, turnKd.get());
+      turnFeedback.enableContinuousInput(-Math.PI, Math.PI);
+    }
   }
 
   public void periodic() {
