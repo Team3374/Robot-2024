@@ -11,7 +11,7 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 
-package frc.robot.subsystems.intakeJoint;
+package frc.robot.subsystems.ampJoint;
 
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
@@ -19,12 +19,12 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile.State;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.ProfiledPIDSubsystem;
 
-public class IntakeJoint extends ProfiledPIDSubsystem {
-  private final IntakeJointIO io;
-  private final IntakeJointIOInputsAutoLogged inputs = new IntakeJointIOInputsAutoLogged();
+public class AmpJoint extends ProfiledPIDSubsystem {
+  private final AmpJointIO io;
+  private final AmpJointIOInputsAutoLogged inputs = new AmpJointIOInputsAutoLogged();
 
-  /** Creates a new Intake Joint. */
-  public IntakeJoint(IntakeJointIO io) {
+  /** Creates a new Amp Joint. */
+  public AmpJoint(AmpJointIO io) {
     super(new ProfiledPIDController(.1, 0, 0, new TrapezoidProfile.Constraints(100, 100)), 0);
     this.io = io;
 
@@ -39,8 +39,8 @@ public class IntakeJoint extends ProfiledPIDSubsystem {
 
   @Override
   public void periodic() {
-    SmartDashboard.putNumber("Current Intake Position", getMeasurement());
-    SmartDashboard.putNumber("Target Intake Position", this.getController().getGoal().position);
+    SmartDashboard.putNumber("Current Amp Position", getMeasurement());
+    SmartDashboard.putNumber("Target Amp Position", this.getController().getGoal().position);
     super.periodic();
 
     io.updateInputs(inputs);
@@ -52,7 +52,7 @@ public class IntakeJoint extends ProfiledPIDSubsystem {
     this.setGoal(positionRad);
   }
 
-  /** Stops the Intake Joint. */
+  /** Stops the Amp Joint. */
   public void stop() {
     io.setSpeed(0);
   }

@@ -40,7 +40,7 @@ import java.util.Queue;
  */
 public class ModuleIOSparkMaxCancoder implements ModuleIO {
   // Gear ratios for SDS MK4i L2, adjust as necessary
-  private static final double DRIVE_GEAR_RATIO = (50.0 / 14.0) * (19.0 / 25.0) * (45.0 / 15.0);
+  private static final double DRIVE_GEAR_RATIO = 6.75;
   private static final double TURN_GEAR_RATIO = 150.0 / 7.0;
 
   private final CANSparkMax driveSparkMax;
@@ -65,25 +65,25 @@ public class ModuleIOSparkMaxCancoder implements ModuleIO {
         driveSparkMax = new CANSparkMax(11, MotorType.kBrushless);
         turnSparkMax = new CANSparkMax(12, MotorType.kBrushless);
         cancoder = new CANcoder(13);
-        absoluteEncoderOffset = new Rotation2d(1.188 - Math.PI); // MUST BE CALIBRATED
+        absoluteEncoderOffset = new Rotation2d(1.143 - Math.PI); // MUST BE CALIBRATED
         break;
       case 1:
         driveSparkMax = new CANSparkMax(21, MotorType.kBrushless);
         turnSparkMax = new CANSparkMax(22, MotorType.kBrushless);
         cancoder = new CANcoder(23);
-        absoluteEncoderOffset = new Rotation2d(-2.308 + Math.PI); // MUST BE CALIBRATED
+        absoluteEncoderOffset = new Rotation2d(Math.PI - 2.318); // MUST BE CALIBRATED
         break;
       case 2:
         driveSparkMax = new CANSparkMax(31, MotorType.kBrushless);
         turnSparkMax = new CANSparkMax(32, MotorType.kBrushless);
         cancoder = new CANcoder(33);
-        absoluteEncoderOffset = new Rotation2d(1.311 - Math.PI); // MUST BE CALIBRATED
+        absoluteEncoderOffset = new Rotation2d(1.287 - Math.PI); // MUST BE CALIBRATED
         break;
       case 3:
         driveSparkMax = new CANSparkMax(41, MotorType.kBrushless);
         turnSparkMax = new CANSparkMax(42, MotorType.kBrushless);
         cancoder = new CANcoder(43);
-        absoluteEncoderOffset = new Rotation2d(-0.833 + Math.PI); // MUST BE CALIBRATED
+        absoluteEncoderOffset = new Rotation2d(Math.PI - 0.719); // MUST BE CALIBRATED
         break;
       default:
         throw new RuntimeException("Invalid module index");
