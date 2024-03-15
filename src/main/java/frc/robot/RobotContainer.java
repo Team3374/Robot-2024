@@ -21,7 +21,9 @@ import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.commands.AmpShootCommand;
 import frc.robot.commands.DriveCommands;
+import frc.robot.commands.IntakeAutomated;
 import frc.robot.commands.RunClimber;
 import frc.robot.commands.RunSingleClimber;
 import frc.robot.commands.auto.DelayDriveBack;
@@ -198,6 +200,8 @@ public class RobotContainer {
 
     // intakeJoint.setDefaultCommand(Commands.run(() -> intakeJoint.runPosition(0), intakeJoint));
     ampJoint.setDefaultCommand(Commands.run(() -> ampJoint.runPosition(0), ampJoint));
+    flywheel.setDefaultCommand(
+        new AmpShootCommand(flywheel, () -> controller.getRightTriggerAxis()));
 
     // controller
     //     .rightBumper()
@@ -232,7 +236,7 @@ public class RobotContainer {
     //         Commands.startEnd(
     //             () -> intake.runVelocity(intakeSpeedInput.get()), intake::stop, intake));
     controllerTwo
-        .rightBumper()
+        .rightTrigger()
         .whileTrue(
             Commands.startEnd(
                 () ->
@@ -240,7 +244,7 @@ public class RobotContainer {
                         topflywheelSpeedInput.get(), bottomflywheelSpeedInput.get()),
                 flywheel::stop,
                 flywheel));
-    //Add amp controls!
+    // Add amp controls!
     controllerTwo
         .a()
         .whileTrue(
